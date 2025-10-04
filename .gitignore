@@ -1,0 +1,23 @@
+# Node / Vite
+node_modules/
+dist/
+.vite/
+
+# Java / Gradle / Maven
+target/
+build/
+.gradle/
+.mvn/
+!.mvn/wrapper/maven-wrapper.jar
+*.log
+
+# IDE
+.vscode/
+.idea/
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db

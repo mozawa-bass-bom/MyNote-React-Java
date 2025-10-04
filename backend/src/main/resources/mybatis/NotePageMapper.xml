@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mynote.app.domain.mapper.NotePageMapper">
+
+	<resultMap id="NotePageMap"
+		type="com.mynote.app.domain.entity.NotePage">
+		<id property="id" column="id" />
+		<result property="noteId" column="note_id" />
+		<result property="pageNumber" column="page_number" />
+		<result property="firebasePublicUrl"
+			column="firebase_public_url" />
+		<result property="firebaseAdminPath"
+			column="firebase_admin_path" />
+		<result property="extractedText" column="extracted_text" />
+
+	</resultMap>
+
+	<insert id="insert"
+		parameterType="com.mynote.app.domain.entity.NotePage"
+		useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO note_pages
+		(note_id,
+		page_number, firebase_public_url, firebase_admin_path,
+		extracted_text)
+		VALUES
+		(#{noteId}, #{pageNumber}, #{firebasePublicUrl},
+		#{firebaseAdminPath},
+		#{extractedText})
+	</insert>
+
+	<update id="updateExtractedText">
+		UPDATE note_pages SET extracted_text =
+		#{extractedText} WHERE id = #{id}
+	</update>
+
+
+
+	<delete id="delete">
+		DELETE FROM note_pages WHERE id = #{id}
+	</delete>
+
+	<select id="findByNoteId" resultMap="NotePageMap">
+		SELECT * FROM note_pages
+		WHERE note_id = #{noteId} ORDER BY page_number ASC
+	</select>
+
+	<select id="findNoteIdById" resultType="long"> SELECT note_id FROM
+		note_pages WHERE id = #{id}
+	</select>
+
+</mapper>

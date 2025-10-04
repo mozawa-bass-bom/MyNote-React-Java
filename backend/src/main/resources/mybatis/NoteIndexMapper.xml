@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mynote.app.domain.mapper.NoteIndexMapper">
+
+  <resultMap id="NoteIndexMap" type="com.mynote.app.domain.entity.NoteIndex">
+    <id property="id" column="id"/>
+    <result property="noteId" column="note_id"/>
+    <result property="indexNumber" column="index_number"/>
+    <result property="startIndex" column="start_index"/>
+    <result property="endIndex" column="end_index"/>
+    <result property="title" column="title"/>
+    <result property="body" column="body"/>
+  </resultMap>
+
+  <insert id="insert" parameterType="com.mynote.app.domain.entity.NoteIndex" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO note_index (note_id, index_number, start_index, end_index, title, body)
+    VALUES (#{noteId}, #{indexNumber}, #{startIndex}, #{endIndex}, #{title}, #{body})
+  </insert>
+
+  <update id="updateTitle">
+    UPDATE note_index SET title = #{title} WHERE id = #{id}
+  </update>
+
+  <update id="updateBody">
+    UPDATE note_index SET body = #{body} WHERE id = #{id}
+  </update>
+
+  <delete id="delete">
+    DELETE FROM note_index WHERE id = #{id}
+  </delete>
+
+  <select id="findByNoteId" resultMap="NoteIndexMap">
+    SELECT * FROM note_index WHERE note_id = #{noteId} ORDER BY index_number ASC
+  </select>
+
+<select id="findNoteIdById" resultType="long">
+    SELECT note_id FROM note_index WHERE id = #{id}
+  </select>
+</mapper>

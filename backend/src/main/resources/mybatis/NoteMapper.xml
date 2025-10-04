@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mynote.app.domain.mapper.NoteMapper">
+
+	<!-- ========================= ResultMap ========================= -->
+	<resultMap id="NoteMap"
+		type="com.mynote.app.domain.entity.Note">
+		<id property="id" column="id" />
+		<result property="userId" column="user_id" />
+		<result property="categoryId" column="category_id" />
+		<result property="userSeqNo" column="user_seq_no" />
+		<result property="title" column="title" />
+		<result property="description" column="description" />
+		<result property="originalFilename" column="original_filename" />
+		<result property="createdAt" column="created_at" />
+		<result property="updatedAt" column="updated_at" />
+	</resultMap>
+
+	<!-- ========================= INSERT ========================= -->
+
+	<!-- note.idとuser_seq_noを自動生成 - user_seq_noはuser_idごとに連番 - user_seq_noとuser_idはユニーク複合キー制約済み 
+		- 分離レベルにより稀に重複が起きた場合は UNIQUE 制約で弾ける想定（上位でリトライ） -->
+	<insert id="insertAutoSeq"
+		parameterType="com.mynote.app.domain.entity.Note"
+		useGeneratedKeys="true" keyProperty="id">
+		<selectKey keyProperty="userSeqNo" resultType="int"
+			order="BEFORE">
+			SELECT COALESCE(MAX(user_seq_no), 0) + 1
+			FROM notes
+			WHERE user_id
+			= #{userId}
+			FOR UPDATE
+		</selectKey>
+		INSERT INTO notes
+		(user_id, category_id, user_seq_no, title,
+		description, original_filename,
+		created_at, updated_at)
+		VALUES
+		(#{userId}, #{categoryId}, #{userSeqNo}, #{title}, #{description},
+		#{originalFilename}, NOW(), NOW())
+	</insert>
+
+
+	<!-- ========================= UPDATE / DELETE ========================= -->
+	<update id="updateTitle">
+		UPDATE notes
+		SET title = #{title}, updated_at = NOW()
+		WHERE id = #{id}
+	</update>
+
+	<update id="updateDescription">
+		UPDATE notes
+		SET description = #{description},
+		updated_at = NOW()
+		WHERE id = #{id}
+	</update>
+
+	<delete id="delete">
+		DELETE FROM notes WHERE id = #{id} AND user_id = #{userId}
+	</delete>
+
+	<!-- ========================= SELECT（一覧/詳細） ========================= -->
+
+
+	
+		<!-- ユーザーから全件取得 -->
+	<select id="findAllByUserId" resultMap="NoteMap">
+		SELECT *
+		FROM notes
+		WHERE
+		user_id = #{userId}
+	</select>
+
+
+	<!-- ナビ生成用 -->
+	<!-- List<NoteNavDto> findNavByUser(@Param("userId") Long userId); -->
+
+	<select id="findNavByUser"
+		resultType="com.mynote.app.api.dto.nav.NoteNavDto">
+		SELECT id, user_id AS userId,category_id AS categoryId, user_seq_no AS
+		userSeqNo, title
+		FROM notes
+		WHERE user_id = #{userId}
+		ORDER BY created_at DESC
+	</select>
+
+	<!-- ページ詳細表示用userIdとuserSeqNoから情報を入手 -->
+	<select id="findByUserAndSeq" resultMap="NoteMap">
+		SELECT *
+		FROM notes
+		WHERE
+		user_id = #{userId}
+		AND user_seq_no = #{userSeqNo}
+	</select>
+
+	<!-- 削除時にfirebaseのURL取得 -->
+	<select id="selectGsUrisByUserId" resultType="string">
+		SELECT np.firebase_admin_path
+		FROM note_pages np
+		JOIN notes n ON n.id = np.note_id
+		WHERE n.user_id = #{userId}
+	</select>
+
+	<!-- categoryIdからエンティティで入手 -->
+	<select id="findByCategoryId" resultMap="NoteMap">
+		SELECT id, user_id,
+		category_id, user_seq_no, title, description,
+		original_filename,
+		created_at, updated_at
+		FROM notes
+		WHERE category_id = #{categoryId}
+		ORDER BY created_at DESC
+	</select>
+
+	<!-- 一応userIdとcategoryIdダブルで詳細情報を入手 -->
+	<select id="findNavByUserAndCategoryId"
+		resultType="com.mynote.app.api.dto.nav.NoteNavDto">
+		SELECT id, category_id AS categoryId, user_seq_no AS
+		userSeqNo, title
+		FROM notes
+		WHERE user_id = #{userId}
+		AND category_id =
+		#{categoryId}
+		ORDER BY created_at DESC
+	</select>
+
+
+	<!-- 一応noteIdから詳細情報を入手 -->
+	<select id="findById" resultMap="NoteMap">
+		SELECT id, user_id, category_id,
+		user_seq_no, title, description,
+		original_filename, created_at,
+		updated_at
+		FROM notes
+		WHERE id = #{id}
+	</select>
+
+	<!-- ページ数カウント -->
+	<select id="countPages" resultType="int">
+		SELECT COUNT(*) FROM
+		note_pages WHERE note_id = #{noteId}
+	</select>
+
+
+	<!-- ページ数カウント -->
+	<select id="countPagesByUserId" resultType="int">
+		SELECT COUNT(*) FROM
+		notes WHERE user_id = #{userId}
+	</select>
+
+</mapper>

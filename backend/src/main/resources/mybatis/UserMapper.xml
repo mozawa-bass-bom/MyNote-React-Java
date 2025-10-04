@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mynote.app.domain.mapper.UserMapper">
+
+	<resultMap id="UserMap"
+		type="com.mynote.app.domain.entity.User">
+		<id property="id" column="id" />
+		<result property="userName" column="user_name" />
+		<result property="email" column="email" />
+		<result property="createdAt" column="created_at" />
+		<result property="role" column="role" />
+	</resultMap>
+
+
+	<resultMap id="LoginUserResultMap"
+		type="com.mynote.app.api.dto.auth.LoginUser">
+		<id property="userId" column="u_id" />
+		<result property="userName" column="u_user_name" />
+		<result property="role" column="u_role" />
+		<result property="password" column="up_password_hash" />
+	</resultMap>
+
+
+	<!-- ユーザー全件取得 -->
+	<select id="findAllUsers" resultMap="UserMap">
+		SELECT * FROM users ORDER BY
+		created_at DESC
+	</select>
+
+	<!-- パスワード忘れの時に使う -->
+	<select id="findByEmail" parameterType="string"
+		resultMap="UserMap">
+		SELECT * FROM users WHERE email = #{email}
+	</select>
+
+
+	<!-- ログイン時のUserNameからログインに必要な会員情報取得 -->
+	<select id="findLoginUserByUserName" parameterType="string"
+		resultMap="LoginUserResultMap">
+		SELECT
+		u.id AS u_id,
+		u.user_name AS u_user_name,
+		u.role AS
+		u_role,
+		up.password_hash AS up_password_hash
+		FROM
+		users u
+		LEFT JOIN
+		user_passwords up ON u.id = up.user_id
+		WHERE
+		u.user_name = #{userName}
+	</select>
+
+	<!-- 新規作成時の重複チェック -->
+	<select id="existsByUserName" parameterType="string"
+		resultType="boolean">
+		SELECT EXISTS(SELECT 1 FROM users WHERE user_name =
+		#{userName})
+	</select>
+	
+	<!--ユーザー毎の使用カテゴリとノート数取得 -->
+	<select id="countUserAggregates"
+		resultType="com.mynote.app.api.dto.admin.UserCountDto">
+		SELECT
+		u.id AS userId,
+		COALESCE(c.cnt, 0) AS categoryCount,
+		COALESCE(n.cnt, 0) AS noteCount
+		FROM users u
+		LEFT JOIN (
+		SELECT user_id, COUNT(*) AS cnt
+		FROM categories
+		GROUP BY user_id
+		) c ON c.user_id = u.id
+		LEFT JOIN (
+		SELECT user_id, COUNT(*) AS cnt
+		FROM notes
+		GROUP BY user_id
+		) n ON n.user_id = u.id
+	</select>
+	
+	<!-- 会員新規登録 -->
+	<insert id="insertUser"
+		parameterType="com.mynote.app.domain.entity.User"
+		useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO users (user_name,
+		email, created_at, role)
+		VALUES (#{userName}, #{email}, NOW(), #{role})
+	</insert>
+
+	<!-- ユーザー権限付与 -->
+	<update id="updateRole">
+		UPDATE users SET role = #{role} WHERE id = #{userId}
+	</update>
+
+	<!-- 会員情報削除 -->
+	<delete id="deleteUser" parameterType="long">
+		DELETE FROM users WHERE id
+		= #{id}
+	</delete>
+
+	<!-- 使うかわからないけど一応 -->
+	<select id="findById" parameterType="long" resultMap="UserMap">
+		SELECT *
+		FROM users WHERE id = #{id}
+	</select>
+
+</mapper>
