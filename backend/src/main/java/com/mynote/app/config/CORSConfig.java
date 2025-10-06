@@ -13,17 +13,18 @@ public class CORSConfig implements WebMvcConfigurer {
 	@Override
 	public void addCorsMappings(CorsRegistry registry) {
 		registry.addMapping("/**")
+				.allowedOrigins("http://localhost:3000")
 				.allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
-				.allowedHeaders("Authorization", "Content-Type")
-				.allowCredentials(true);
-
+				.allowedHeaders("*")
+				.exposedHeaders("Authorization", "Content-Disposition")
+				.allowCredentials(true)
+				.maxAge(3600);
 	}
 
 	@Bean
 	FilterRegistrationBean<AuthFilter> authFilter() {
-	var bean =
-	new FilterRegistrationBean<AuthFilter>(new AuthFilter());
-	bean.addUrlPatterns("/api/notes/*");
-	return bean;
+		var bean = new FilterRegistrationBean<>(new AuthFilter());
+		bean.addUrlPatterns("/api/notes/*");
+		return bean;
 	}
 }

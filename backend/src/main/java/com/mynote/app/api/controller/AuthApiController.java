@@ -51,7 +51,10 @@ public class AuthApiController {
 
 		// 3. トークン生成とセッション保存
 		String token = TokenUtil.generateToken(user.getUserName(), user.getRole());
-		session.setAttribute(token, loginUser);
+		session.setAttribute("userId", userId);        // Long
+		session.setAttribute("userName", user.getUserName());    // String
+		session.setAttribute("role", user.getRole());            // String
+		session.setAttribute("jwt", token);                          
 
 		// 4. レスポンスDTOの作成
 		AuthLoginResponseDto response = new AuthLoginResponseDto(

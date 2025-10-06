@@ -46,7 +46,7 @@ public class AuthFilter extends OncePerRequestFilter {
 
         // 管理者パスのチェック
         if (requestURI.startsWith(ADMIN_PATH_PREFIX)) {
-            if (!"admin".equals(userRole)) {
+            if (!"ADMNIN".equals(userRole)) {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN); // 403
                 return;
             }

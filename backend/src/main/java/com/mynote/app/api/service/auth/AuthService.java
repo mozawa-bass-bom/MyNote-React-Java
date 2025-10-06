@@ -43,9 +43,16 @@ public class AuthService {
 		if (loginUser == null) {
 			return null;
 		}
-
-		if (!BCrypt.checkpw(loginPass, loginUser.getPassword())) {
-			return null;
+	
+		try {
+		    if (!BCrypt.checkpw(loginPass, loginUser.getPassword())) {
+		        System.out.println("チェックミス: パスワード不一致");
+		        return null;
+		    }
+		} catch (Exception e) {
+		    System.out.println("チェック中にエラー: " + e.getMessage());
+		    e.printStackTrace();
+		    return null;
 		}
 
 		AuthUserDto authUserDto = new AuthUserDto();

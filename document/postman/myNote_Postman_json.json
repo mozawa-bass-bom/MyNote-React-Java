@@ -1,0 +1,471 @@
+{
+  "info": {
+    "name": "MyNote API Tests",
+    "_postman_id": "8f6d9c6c-2b2f-4b0c-9b6d-aaaa11112222",
+    "description": "MyNote Java Spring API – Auth / Categories / Contacts / Notes / Admin / Upload(SSE)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "05 Auth",
+      "item": [
+        {
+          "name": "POST /api/auth/login (user)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"{{ok_username}}\",\n  \"password\": \"{{ok_password}}\"\n}"
+            },
+            "description": "ユーザーでログイン。Cookie Jarにセッションが保存される。"
+          }
+        },
+        {
+          "name": "POST /api/auth/login (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"{{admin_username}}\",\n  \"password\": \"{{admin_password}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /api/auth/availability (username only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/auth/availability",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"userName\": \"user1\" }"
+            }
+          }
+        },
+        {
+          "name": "POST /api/auth/availability (both missing → 400想定)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/auth/availability",
+            "body": { "mode": "raw", "raw": "{}" }
+          }
+        },
+        {
+          "name": "POST /api/auth/register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"user_{{$timestamp}}\",\n  \"password\": \"Str0ngPass!2025\",\n  \"email\": \"user_{{$timestamp}}@example.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /api/auth/logout",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/auth/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Password Reset",
+      "item": [
+        {
+          "name": "POST /api/auth/password-reset/request",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "User-Agent", "value": "PostmanRuntime/1.0" },
+              { "key": "X-Forwarded-For", "value": "203.0.113.5" }
+            ],
+            "url": "{{base_url}}/api/auth/password-reset/request?appBaseUrl=https://app.mynote.local",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"{{reset_email}}\" }"
+            },
+            "description": "存在漏洩防止のため常に200"
+          }
+        },
+        {
+          "name": "GET /api/auth/password-reset/verify (true)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/auth/password-reset/verify?token={{good_token}}"
+          }
+        },
+        {
+          "name": "GET /api/auth/password-reset/verify (false)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/auth/password-reset/verify?token={{bad_token}}"
+          }
+        },
+        {
+          "name": "POST /api/auth/password-reset/complete (ok)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/auth/password-reset/complete",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"token\": \"{{good_token}}\", \"newPassword\": \"Str0ngPass!2025\" }"
+            }
+          }
+        },
+        {
+          "name": "POST /api/auth/password-reset/complete (ng)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/auth/password-reset/complete",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"token\": \"{{bad_token}}\", \"newPassword\": \"Str0ngPass!2025\" }"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "20 Categories",
+      "item": [
+        {
+          "name": "GET /api/notes/categories",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_jwt}}" }],
+            "url": "{{base_url}}/api/notes/categories",
+            "description": "AuthFilter + Cookie（ログイン実行済み）必須"
+          }
+        },
+        {
+          "name": "POST /api/notes/categories/create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_jwt}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/notes/categories/create",
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"name\": \"Books\", \"description\": \"Tech & Jazz notes\" }"
+            }
+          }
+        },
+        {
+          "name": "GET /api/notes/categories/:id/prompts",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_jwt}}" }],
+            "url": "{{base_url}}/api/notes/categories/{{exist_category_id}}/prompts"
+          }
+        },
+        {
+          "name": "PATCH /api/notes/categories/:id (rename)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_jwt}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/notes/categories/{{exist_category_id}}",
+            "body": { "mode": "raw", "raw": "{ \"name\": \"Books (Renamed)\" }" }
+          }
+        },
+        {
+          "name": "DELETE /api/notes/categories/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_jwt}}" }],
+            "url": "{{base_url}}/api/notes/categories/{{exist_category_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "30 Contacts",
+      "item": [
+        {
+          "name": "POST /api/contacts (Cookie必須)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/contacts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice\",\n  \"email\": \"alice@example.com\",\n  \"message\": \"問い合わせテストです。\"\n}"
+            },
+            "description": "@SessionAttribute(\"userId\") を読むためログインCookie必須（AuthFilterは対象外）"
+          }
+        }
+      ]
+    },
+    {
+      "name": "40 Notes",
+      "item": [
+        {
+          "name": "POST /api/notes/create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_jwt}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/notes/create",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": {{exist_category_id}},\n  \"title\": \"My new note\",\n  \"description\": \"<p>hello</p>\"\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /api/notes",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_jwt}}" }],
+            "url": "{{base_url}}/api/notes"
+          }
+        },
+        {
+          "name": "GET /api/notes/toc",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_jwt}}" }],
+            "url": "{{base_url}}/api/notes/toc"
+          }
+        },
+        {
+          "name": "GET /api/notes/pages",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_jwt}}" }],
+            "url": "{{base_url}}/api/notes/pages"
+          }
+        },
+        {
+          "name": "PATCH /api/notes/:seq/description",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_jwt}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/notes/{{exist_user_seqno}}/description",
+            "body": { "mode": "raw", "raw": "{ \"description\": \"<p>updated by Postman</p>\" }" }
+          }
+        },
+        {
+          "name": "PATCH /api/notes/toc/:tocId/rename",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_jwt}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/notes/toc/{{exist_toc_id}}/rename",
+            "body": { "mode": "raw", "raw": "{ \"title\": \"New TOC Title\" }" }
+          }
+        },
+        {
+          "name": "PATCH /api/notes/pages/:pageId/text",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_jwt}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/notes/pages/{{exist_page_id}}/text",
+            "body": { "mode": "raw", "raw": "{ \"extractedText\": \"Updated OCR text\" }" }
+          }
+        },
+        {
+          "name": "DELETE /api/notes/:seq",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_jwt}}" }],
+            "url": "{{base_url}}/api/notes/{{exist_user_seqno}}"
+          }
+        },
+        {
+          "name": "DELETE /api/notes/userdelate (self all)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{user_jwt}}" }],
+            "url": "{{base_url}}/api/notes/userdelate"
+          }
+        }
+      ]
+    },
+    {
+      "name": "45 Admin",
+      "item": [
+        {
+          "name": "GET /api/notes/admin/contacts",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_jwt}}" }],
+            "url": "{{base_url}}/api/notes/admin/contacts"
+          }
+        },
+        {
+          "name": "GET /api/notes/admin/users",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_jwt}}" }],
+            "url": "{{base_url}}/api/notes/admin/users"
+          }
+        },
+        {
+          "name": "DELETE /api/notes/admin/userDelete/:userId",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_jwt}}" }],
+            "url": "{{base_url}}/api/notes/admin/userDelete/1",
+            "description": "タイポ修正後パス"
+          }
+        },
+        {
+          "name": "PATCH /api/notes/admin/users/:userId/role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_jwt}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/notes/admin/users/2/role",
+            "body": { "mode": "raw", "raw": "{ \"role\": \"admin\" }" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "50 Upload (SSE)",
+      "item": [
+        {
+          "name": "POST /api/notes/upload/process-stream (new cat, no name → SSE error)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_jwt}}" },
+              { "key": "Accept", "value": "text/event-stream" }
+            ],
+            "url": "{{base_url}}/api/notes/upload/process-stream",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "createNewCategory", "value": "true", "type": "text" },
+                { "key": "noteTitle", "value": "Test Note", "type": "text" }
+              ]
+            },
+            "description": "SSEで newCategoryName 必須エラーが返ることを確認"
+          }
+        },
+        {
+          "name": "POST /api/notes/upload/process-stream (existing, missing id → SSE error)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_jwt}}" },
+              { "key": "Accept", "value": "text/event-stream" }
+            ],
+            "url": "{{base_url}}/api/notes/upload/process-stream",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "createNewCategory", "value": "false", "type": "text" },
+                { "key": "noteTitle", "value": "Test Note", "type": "text" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /api/notes/upload/process-stream (mode=simple)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_jwt}}" },
+              { "key": "Accept", "value": "text/event-stream" }
+            ],
+            "url": "{{base_url}}/api/notes/upload/process-stream",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "createNewCategory", "value": "false", "type": "text" },
+                { "key": "existingCategoryId", "value": "{{exist_category_id}}", "type": "text" },
+                { "key": "mode", "value": "simple", "type": "text" },
+                { "key": "noteTitle", "value": "SSE Simple", "type": "text" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /api/notes/upload/process-stream (new cat ok, no file → SSE starts)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_jwt}}" },
+              { "key": "Accept", "value": "text/event-stream" }
+            ],
+            "url": "{{base_url}}/api/notes/upload/process-stream",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "createNewCategory", "value": "true", "type": "text" },
+                { "key": "newCategoryName", "value": "Books From SSE", "type": "text" },
+                { "key": "noteTitle", "value": "My SSE Note", "type": "text" },
+                { "key": "tocPrompt", "value": "{{toc_prompt}}", "type": "text" },
+                { "key": "pagePrompt", "value": "{{page_prompt}}", "type": "text" },
+                { "key": "saveAsDefault", "value": "true", "type": "text" }
+              ]
+            },
+            "description": "SSE接続開始までの前段確認（PDF未添付）"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8080" },
+
+    { "key": "ok_username", "value": "user1" },
+    { "key": "ok_password", "value": "password1" },
+    { "key": "admin_username", "value": "admin1" },
+    { "key": "admin_password", "value": "adminpass" },
+
+    { "key": "user_jwt", "value": "PUT_USER_JWT_HERE" },
+    { "key": "admin_jwt", "value": "PUT_ADMIN_JWT_HERE" },
+
+    { "key": "exist_category_id", "value": "5" },
+    { "key": "exist_user_seqno", "value": "11" },
+    { "key": "exist_toc_id", "value": "11" },
+    { "key": "exist_page_id", "value": "22" },
+
+    { "key": "reset_email", "value": "user1@example.com" },
+    { "key": "good_token", "value": "valid-reset-token" },
+    { "key": "bad_token", "value": "invalid-or-expired-token" },
+
+    { "key": "toc_prompt", "value": "Make table of contents" },
+    { "key": "page_prompt", "value": "Explain each page" }
+  ]
+}
