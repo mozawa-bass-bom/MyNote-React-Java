@@ -22,25 +22,25 @@
 
 	<!-- note.idとuser_seq_noを自動生成 - user_seq_noはuser_idごとに連番 - user_seq_noとuser_idはユニーク複合キー制約済み 
 		- 分離レベルにより稀に重複が起きた場合は UNIQUE 制約で弾ける想定（上位でリトライ） -->
-	<insert id="insertAutoSeq"
-		parameterType="com.mynote.app.domain.entity.Note"
-		useGeneratedKeys="true" keyProperty="id">
-		<selectKey keyProperty="userSeqNo" resultType="int"
-			order="BEFORE">
-			SELECT COALESCE(MAX(user_seq_no), 0) + 1
-			FROM notes
-			WHERE user_id
-			= #{userId}
-			FOR UPDATE
-		</selectKey>
-		INSERT INTO notes
-		(user_id, category_id, user_seq_no, title,
-		description, original_filename,
-		created_at, updated_at)
-		VALUES
-		(#{userId}, #{categoryId}, #{userSeqNo}, #{title}, #{description},
-		#{originalFilename}, NOW(), NOW())
-	</insert>
+<insert id="insertAutoSeq"
+        parameterType="com.mynote.app.domain.entity.Note"
+        useGeneratedKeys="true"
+        keyProperty="id"
+        keyColumn="id">
+
+  <selectKey keyProperty="userSeqNo" resultType="int" order="BEFORE">
+    SELECT COALESCE(MAX(user_seq_no), 0) + 1
+    FROM notes
+    WHERE user_id = #{userId}
+    FOR UPDATE
+  </selectKey>
+
+  INSERT INTO notes
+    (user_id, category_id, user_seq_no, title, description, original_filename, created_at, updated_at)
+  VALUES
+    (#{userId}, #{categoryId}, #{userSeqNo}, #{title}, #{description}, #{originalFilename}, NOW(), NOW())
+</insert>
+
 
 
 	<!-- ========================= UPDATE / DELETE ========================= -->

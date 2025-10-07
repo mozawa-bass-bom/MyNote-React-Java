@@ -24,24 +24,37 @@ public class NavService {
 	private final CategoryMapper categoryMapper;
 	private final NoteMapper noteMapper;
 
-	public List<CategoryNavDto> getNavCategories(Long userId) {
-		return categoryMapper.selectNavByUserId(userId);
+	/** 表示順で取得される前提（SQL側で ORDER BY 済み） */
+	public Map<Long, CategoryNavDto> getNavCategories(Long userId) {
+		List<CategoryNavDto> categories = categoryMapper.selectNavByUserId(userId);
+
+		// 表示順維持のため LinkedHashMap に収集
+		return categories.stream().collect(Collectors.toMap(
+				CategoryNavDto::id,
+				c -> c,
+				(a, b) -> a, // 同一ID衝突時は先勝ち
+				LinkedHashMap::new));
 	}
 
+	/** カテゴリIDごとにノートをグルーピング（表示順維持） */
 	public Map<Long, List<NoteNavDto>> getNotesGroupedByCategory(Long userId) {
 		var notes = noteMapper.findNavByUser(userId);
-		// 表示順を維持したいので LinkedHashMap
+
+		// Map も List も具体型を固定しておくと安心
 		return notes.stream().collect(Collectors.groupingBy(
 				NoteNavDto::categoryId,
 				LinkedHashMap::new,
-				Collectors.toList()));
+				Collectors.toCollection(ArrayList::new)));
 	}
 
+	/** Jotai 側に直で流せる Map 形式 */
 	public NavTreeDto getNavTree(Long userId) {
-		var categories = getNavCategories(userId);
+		var categoriesById = getNavCategories(userId);
 		var notesByCategory = getNotesGroupedByCategory(userId);
-		// ノート0件のカテゴリも必ずキーを用意
-		categories.forEach(c -> notesByCategory.computeIfAbsent(c.id(), k -> new ArrayList<>()));
-		return new NavTreeDto(categories, notesByCategory);
+
+		// ★ ノート0件カテゴリにも空配列を用意（フロント実装がシンプルになる）
+		categoriesById.keySet().forEach(cid -> notesByCategory.computeIfAbsent(cid, k -> new ArrayList<>()));
+
+		return new NavTreeDto(categoriesById, notesByCategory);
 	}
 }

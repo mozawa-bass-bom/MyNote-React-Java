@@ -36,7 +36,7 @@ public interface NoteMapper {
 
     int updateDescription(@Param("id") Long id, @Param("description") String desc);
 
-    int delete(@Param("id") Long id , @Param("userId") Long userId);
+    int delete( @Param("userId") Long userId,@Param("id") Long id );
 
     // =============================
     // SELECT（一 覧 / 詳 細）

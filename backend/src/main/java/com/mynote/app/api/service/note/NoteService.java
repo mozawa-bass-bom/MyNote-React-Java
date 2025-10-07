@@ -32,41 +32,54 @@ public class NoteService {
 	private final NoteMapper noteMapper;
 	private final NotePageMapper notePageMapper;
 	private final NoteIndexMapper noteIndexMapper;
-private final UserMapper userMapper;
+	private final UserMapper userMapper;
+
 	@Transactional(rollbackFor = Exception.class)
-	public Long createNote(Long userId, NoteRequestDto noteRequestDto) {
-		try {
-			log.info("Attempting to create note for userId={}", userId);
+	public Long createNote(Long userId, NoteRequestDto dto) {
+	  try {
+	    log.info("Attempting to create note for userId={}", userId);
 
-			Note note = new Note();
-			note.setUserId(userId);
-			note.setCategoryId(noteRequestDto.getCategoryId());
-			note.setTitle(noteRequestDto.getTitle());
-			note.setDescription(noteRequestDto.getDescription());
-			note.setOriginalFilename(noteRequestDto.getOriginalFilename());
+	    // 入力チェック（必要なら）
+	    if (dto.getCategoryId() == null) {
+	      throw new IllegalArgumentException("categoryId is required");
+	    }
 
-			// 登録実行。note.getId()にDBで生成されたIDがセットされる。
-			noteMapper.insertAutoSeq(note);
+	    // 準備
+	    Note note = new Note();
+	    note.setUserId(userId);
+	    note.setCategoryId(dto.getCategoryId());
+	    note.setTitle(dto.getTitle());
+	    note.setDescription(dto.getDescription());
+	    note.setOriginalFilename(dto.getOriginalFilename());
 
-			log.info("Note created successfully with ID: {}", note.getId());
+	    // 挿入（userSeqNo は BEFORE selectKey で、id は useGeneratedKeys で入る想定）
+	    noteMapper.insertAutoSeq(note);
 
-			// 成功した場合は生成されたIDを返す
-			return note.getId();
+	 
+	    final Note saved = (note.getId() != null)
+	        ? noteMapper.findById(note.getId())
+	        : noteMapper.findByUserAndSeq(userId, note.getUserSeqNo());
 
-		} catch (DataIntegrityViolationException e) {
-			// 例: ユニーク制約違反など
-			log.warn("Note creation failed due to data integrity violation (e.g., duplicate userSeqNo): userId={}",
-					userId, e);
-			// 失敗時は null を返す
-			return null;
-		} catch (Exception e) {
-			// その他の予期せぬエラー
+	    if (saved == null) {
+	      throw new IllegalStateException("Inserted row not found (userId=" + userId +
+	          ", userSeqNo=" + note.getUserSeqNo() + ")");
+	    }
 
-			log.error("An unexpected error occurred during note creation: userId={}", userId, e);
-			// 失敗時は null を返す
-			return null;
-		}
+	    log.info("Note created: id={}, userSeqNo={}, createdAt={}",
+	        saved.getId(), saved.getUserSeqNo(), saved.getCreatedAt());
+
+	    return saved.getId();
+
+	  } catch (DataIntegrityViolationException e) {
+	    log.warn("Note creation failed due to data integrity violation: userId={}", userId, e);
+	    return null;
+	  } catch (Exception e) {
+	    log.error("Unexpected error during note creation: userId={}", userId, e);
+	    return null;
+	  }
 	}
+
+
 
 	/**
 	 * ユーザーに紐づいた全てのノートを取得する。
@@ -302,12 +315,13 @@ private final UserMapper userMapper;
 
 		return new DeletedNoteMeta(noteId, categoryId);
 	}
-	
-	  @Transactional
-	    public int deleteAllNotesByUser(Long userId) {
-	        if (userId == null) throw new IllegalArgumentException("userId is required");
-	        // FK(CASCADE) 前提：notes を消せば note_pages / note_indexes 等も連鎖削除
-	        return userMapper.deleteUser(userId);
-	        
-	    }
+
+	@Transactional
+	public int deleteAllNotesByUser(Long userId) {
+		if (userId == null)
+			throw new IllegalArgumentException("userId is required");
+		// FK(CASCADE) 前提：notes を消せば note_pages / note_indexes 等も連鎖削除
+		return userMapper.deleteUser(userId);
+
+	}
 }

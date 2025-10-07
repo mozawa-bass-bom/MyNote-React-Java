@@ -1,4 +1,5 @@
-import { useRef, type FormEvent } from "react";
+import { useRef, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 
 export default function LoginForm() {
   const loginIdRef = useRef<HTMLInputElement>(null);
@@ -24,7 +25,8 @@ export default function LoginForm() {
         パスワード:
         <input type="password" className="ms-3" ref={loginPassRef} />
       </div>
-      <input type="submit" className="btn btn-primary" value="ログイン" />
+      <input type="submit" className="" value="ログイン" />
+      <Link to="/resetPass">パスワードリセット</Link>
     </form>
   );
 }
