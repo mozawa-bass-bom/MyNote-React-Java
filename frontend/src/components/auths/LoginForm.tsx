@@ -1,32 +1,73 @@
+// src/pages/auth/LoginForm.tsx
 import { useRef, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import useLogin from '../../hooks/useLogin';
 
 export default function LoginForm() {
   const loginIdRef = useRef<HTMLInputElement>(null);
   const loginPassRef = useRef<HTMLInputElement>(null);
+  const { login, isPending, isError } = useLogin();
+  const navigate = useNavigate();
 
-  const submitData = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (isPending) return;
 
-    const loginId = loginIdRef.current?.value;
-    const loginPass = loginPassRef.current?.value;
+    const loginId = loginIdRef.current?.value?.trim() ?? '';
+    const loginPass = loginPassRef.current?.value ?? '';
+    if (!loginId || !loginPass) return;
 
-    console.log(loginId);
-    console.log(loginPass);
+    const ok = await login(loginId, loginPass);
+    if (ok) {
+      navigate('/notes');
+    }
   };
 
   return (
-    <form onSubmit={submitData}>
-      <div className="mb-3">
-        ログイン ID:
-        <input type="text" className="ms-3" ref={loginIdRef} />
+    <form onSubmit={handleSubmit} className="space-y-3 max-w-sm">
+      <div>
+        <label className="block text-sm mb-1">
+          ログイン ID
+          <input
+            type="text"
+            ref={loginIdRef}
+            className="mt-1 w-full border rounded px-2 py-1"
+            autoComplete="username"
+            disabled={isPending}
+          />
+        </label>
       </div>
-      <div className="mb-3">
-        パスワード:
-        <input type="password" className="ms-3" ref={loginPassRef} />
+      <div>
+        <label className="block text-sm mb-1">
+          パスワード
+          <input
+            type="password"
+            ref={loginPassRef}
+            className="mt-1 w-full border rounded px-2 py-1"
+            autoComplete="current-password"
+            disabled={isPending}
+          />
+        </label>
       </div>
-      <input type="submit" className="" value="ログイン" />
-      <Link to="/resetPass">パスワードリセット</Link>
+
+      {isError && (
+        <p role="alert" className="text-sm text-red-600">
+          ログインに失敗しました。
+        </p>
+      )}
+
+      <div className="flex items-center gap-2">
+        <button
+          type="submit"
+          className="px-3 py-1.5 rounded bg-black text-white disabled:opacity-50"
+          disabled={isPending}
+        >
+          {isPending ? 'ログイン中…' : 'ログイン'}
+        </button>
+        <Link to="/resetPass" className="px-3 py-1.5 rounded border inline-block text-sm">
+          パスワードリセット
+        </Link>
+      </div>
     </form>
   );
 }

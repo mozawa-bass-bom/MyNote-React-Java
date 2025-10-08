@@ -49,8 +49,8 @@ public class NavService {
 
 	/** Jotai 側に直で流せる Map 形式 */
 	public NavTreeDto getNavTree(Long userId) {
-		var categoriesById = getNavCategories(userId);
-		var notesByCategory = getNotesGroupedByCategory(userId);
+		Map<Long, CategoryNavDto> categoriesById = getNavCategories(userId);
+		Map<Long, List<NoteNavDto>>  notesByCategory = getNotesGroupedByCategory(userId);
 
 		// ★ ノート0件カテゴリにも空配列を用意（フロント実装がシンプルになる）
 		categoriesById.keySet().forEach(cid -> notesByCategory.computeIfAbsent(cid, k -> new ArrayList<>()));

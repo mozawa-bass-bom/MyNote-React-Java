@@ -2,45 +2,62 @@
 import { useState, useEffect } from 'react';
 import customAxios from '../helpers/CustomAxios';
 import { useSetAtom } from 'jotai';
-import { loginUserAtom } from '../states/UserAtom';
-import type { LoginUser, RawLoginResponse } from '../types/loginUser';
+import { categoriesByIdAtom, loginUserAtom, notesByCategoryIdAtom, roleAtom } from '../states/UserAtom';
+import type { LoginUser, NormalizedLoginResult, RawLoginResponse } from '../types/loginUser';
 import { normalizeLoginResponse } from '../helpers/normalizeLogin';
 
 async function sendConfidential(loginId: string, loginPass: string) {
-  const res = await customAxios.post('/auth/login', { loginId, loginPass });
+  const res = await customAxios.post('/auth/login', {
+    userName: loginId,
+    password: loginPass,
+  });
   return res.data as RawLoginResponse;
 }
 
 export default function useLogin() {
   const [isPending, setIsPending] = useState(false);
   const [isError, setIsError] = useState(false);
+  const setRole = useSetAtom(roleAtom);
   const setLoginUser = useSetAtom(loginUserAtom);
+  const setCategoriesById = useSetAtom(categoriesByIdAtom);
+  const setNotesByCategoryId = useSetAtom(notesByCategoryIdAtom);
 
-  // 起動時に復元（F5でも維持）
   useEffect(() => {
     const saved = localStorage.getItem('loginUser');
     if (saved) {
       const user: LoginUser = JSON.parse(saved);
       setLoginUser(user);
-      // AuthorizationヘッダはinterceptorがlocalStorageから読むので何もしなくてOK
     }
   }, [setLoginUser]);
 
-  const login = async (loginId: string, loginPass: string) => {
+  // 戻り値: 成功なら true / 失敗なら false
+  const login = async (loginId: string, loginPass: string): Promise<boolean> => {
     setIsPending(true);
     setIsError(false);
     try {
       const raw = await sendConfidential(loginId, loginPass);
-      const user = normalizeLoginResponse(raw);
+      const { loginUser, categoriesById, notesByCategoryId, role }: NormalizedLoginResult = normalizeLoginResponse(raw);
 
-      // 永続化（開発はlocalStorageでOK。本番はHttpOnly Cookie推奨）
-      localStorage.setItem('authToken', user.token);
-      localStorage.setItem('loginUser', JSON.stringify(user));
-
-      setLoginUser(user);
+      // ★ 成功時のみ保存（キー名は 'authToken' に統一）
+      //
+      localStorage.setItem('authToken', loginUser.token);
+      localStorage.setItem('loginUser', JSON.stringify(loginUser));
+      setRole(role);
+      setCategoriesById(new Map(categoriesById));
+      setNotesByCategoryId(new Map(notesByCategoryId));
+      setLoginUser(loginUser);
+      return true;
     } catch (e) {
       console.error(e);
       setIsError(true);
+
+      // ★ 失敗時は絶対に書き込まない & 念のため削除
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('loginUser');
+      setLoginUser(null);
+      setCategoriesById(new Map());
+      setNotesByCategoryId(new Map());
+      return false;
     } finally {
       setIsPending(false);
     }

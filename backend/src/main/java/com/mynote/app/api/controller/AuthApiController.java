@@ -61,6 +61,7 @@ public class AuthApiController {
 				user.getUserName(),
 				userId.toString(),
 				token,
+				user.getRole(),
 				navTree // Nav情報をレスポンスに含める
 		);
 

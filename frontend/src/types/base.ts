@@ -1,18 +1,20 @@
 // types/base.ts
-export type Role = "ADMIN" | "USER";
+export type Role = 'ADMIN' | 'USER';
 
+// types/base.ts
 export type Category = {
   id: number;
+  userId: number;
   name: string;
+  noteCount: number;
 };
 
-export type Note = {
+export type NoteSummary = {
   id: number;
+  userId: number;
   categoryId: number;
   userSeqNo: number;
   title: string;
-  createdAt: string;
-  pageCount: number;
 };
 
 export type NoteDetailResponse = {

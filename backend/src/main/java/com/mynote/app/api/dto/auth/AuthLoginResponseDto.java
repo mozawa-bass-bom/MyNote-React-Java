@@ -5,5 +5,6 @@ public record AuthLoginResponseDto(
     String userName,
     String userId,
     String token,
+    String role,
     NavTreeDto nav
 ) {}
