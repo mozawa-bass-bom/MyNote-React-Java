@@ -9,6 +9,7 @@ export const loginUserAtom = atomWithStorage<LoginUser | null>('loginUser', null
 export const roleAtom = atom<Role>('USER');
 
 export const categoriesByIdAtom = atom<Map<number, Category>>(new Map());
+// ナビ管理の為にカテゴリーidをkeyにしたmap
 export const notesByCategoryIdAtom = atom<Map<number, NoteSummary[]>>(new Map());
 
 export const selectedCategoryIdAtom = atom<number | null>(null);

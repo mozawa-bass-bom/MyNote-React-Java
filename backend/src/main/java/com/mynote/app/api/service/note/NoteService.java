@@ -8,6 +8,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.mynote.app.api.dto.note.NoteByUserSeqNoResponceDto;
 import com.mynote.app.api.dto.note.NoteRequestDto;
 import com.mynote.app.api.dto.note.NoteResponseDto;
 import com.mynote.app.api.dto.note.PageResponseDto;
@@ -79,7 +80,25 @@ public class NoteService {
 	  }
 	}
 
-
+	public  NoteByUserSeqNoResponceDto getNoteByUserSeqNo(Long userId, Integer userSeqNo) {
+		
+		Note note = noteMapper.findByUserAndSeq(userId, userSeqNo);
+		if (note == null) {
+			return null;
+		}
+		List<NotePage> pages = notePageMapper.findByNoteId(note.getId());
+		List<NoteIndex> indices = noteIndexMapper.findByNoteId(note.getId());
+		
+		System.out.println(note.getId());
+		NoteResponseDto noteDto = toListResponseDto(note);
+		List<PageResponseDto> page = pages.stream().map(this::toPageResponseDto).collect(Collectors.toList());
+		List<TocResponseDto> toc = indices.stream().map(this::toTocResponseDto).collect(Collectors.toList());
+		NoteByUserSeqNoResponceDto dto = new NoteByUserSeqNoResponceDto();
+		dto.setNote(noteDto);
+		dto.setPage(page);
+		dto.setToc(toc);
+		return dto;
+	}
 
 	/**
 	 * ユーザーに紐づいた全てのノートを取得する。

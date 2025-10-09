@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.mynote.app.api.dto.ApiResponse;
+import com.mynote.app.api.dto.note.NoteByUserSeqNoResponceDto;
 import com.mynote.app.api.dto.note.NoteDescriptionUpdateDto;
 import com.mynote.app.api.dto.note.NoteRequestDto;
 import com.mynote.app.api.dto.note.NoteResponseDto;
@@ -89,6 +90,23 @@ public class NoteApiController {
 		return ResponseEntity.ok(ApiResponse.ok(pageMap));
 	}
 
+	// --- GET (userSeqによる単ページ取得) ---
+	@GetMapping("/{userSeqNo}")
+	public ResponseEntity<ApiResponse<NoteByUserSeqNoResponceDto>> getNoteByUserSeqNo(
+			@PathVariable Integer userSeqNo,
+			@SessionAttribute("userId") Long userId) {
+		log.info("[GET] getNoteByUserSeqNo: userId={}, userSeqNo={}", userId, userSeqNo);
+
+		NoteByUserSeqNoResponceDto note = noteService.getNoteByUserSeqNo(userId, userSeqNo);
+		if (note == null) {
+			log.warn("Note not found or forbidden: userId={}, userSeqNo={}", userId, userSeqNo);
+			return ResponseEntity.status(404).body(ApiResponse.failWithErrors("not_found_or_forbidden", null));
+		}
+
+		log.info("Note retrieved successfully: userSeqNo={}", userSeqNo);
+		return ResponseEntity.ok(ApiResponse.ok(note));
+	}
+	
 	// --- PATCH (更新) ---
 
 	/** ノート概要HTML更新 */
