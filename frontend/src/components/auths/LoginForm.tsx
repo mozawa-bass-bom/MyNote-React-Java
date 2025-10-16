@@ -24,9 +24,9 @@ export default function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 max-w-sm">
+    <form onSubmit={handleSubmit} className="space-y-3 w-m max-w-m">
       <div>
-        <label className="block text-sm mb-1">
+        <label className="block text-m mb-1">
           ログイン ID
           <input
             type="text"
@@ -38,7 +38,7 @@ export default function LoginForm() {
         </label>
       </div>
       <div>
-        <label className="block text-sm mb-1">
+        <label className="block text-m mb-1">
           パスワード
           <input
             type="password"

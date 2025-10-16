@@ -80,7 +80,7 @@
 	<select id="findNavByUser"
 		resultType="com.mynote.app.api.dto.nav.NoteNavDto">
 		SELECT id, user_id AS userId,category_id AS categoryId, user_seq_no AS
-		userSeqNo, title
+		userSeqNo, title ,created_at, updated_at
 		FROM notes
 		WHERE user_id = #{userId}
 		ORDER BY created_at DESC

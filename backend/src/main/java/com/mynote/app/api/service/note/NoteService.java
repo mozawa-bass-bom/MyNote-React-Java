@@ -279,33 +279,6 @@ public class NoteService {
 		return 1;
 	}
 
-	/**
-	 * ページOCRテキストを更新する。
-	 * 💡 pageIdからNoteの所有者をチェックするロジックを組み込みました。
-	 *
-	 * @param userId ユーザーID
-	 * @param pageId ページID
-	 * @param extractedText 抽出された新しいテキスト
-	 * @return 更新件数 (0: 権限なし/データなし, 1: 成功)
-	 */
-	@Transactional
-	public int updatePageText(Long userId, Long pageId, String extractedText) { // 💡 userSeqNoを削除
-		log.debug("Service: updatePageText called for userId={}, pageId={}", userId, pageId);
-
-		// 1. pageIdからNoteIdを取得
-		Long noteId = notePageMapper.findNoteIdById(pageId);
-
-		// 2. NoteIdとUserIdを使って所有権をチェック
-		Note note = noteMapper.findById(noteId);
-		if (note == null || !note.getUserId().equals(userId)) {
-			log.warn("Access forbidden or Note not found: userId={}, noteId={}", userId, noteId);
-			return 0;
-		}
-
-		// 3. 権限チェックOK、更新を実行
-		notePageMapper.updateExtractedText(pageId, extractedText);
-		return 1;
-	}
 
 	@Value
 	public static class DeletedNoteMeta {

@@ -18,6 +18,19 @@ export type NoteSummary = {
   createdAt: string;
   updatedAt: string;
 };
+
+// ======================
+// 共通)APIレスポンスのひな型
+// ======================
+export type ApiResponse<T> = {
+  success: boolean;
+  data: T | null;
+  message?: string | null;
+  code?: string | number | null;
+  errors?: unknown;
+  meta?: unknown;
+  timestamp?: string;
+};
 // ======================
 // 1) APIワイヤー用型（サーバのJSONそのまま）
 // ======================
@@ -57,7 +70,6 @@ export type ApiNoteDetailData = {
   toc: ApiTocItem[];
   page: ApiPageItem[];
 };
-
 // ======================
 // 2) アプリ用型（UIで扱いやすい命名）
 // ======================
@@ -124,3 +136,14 @@ export function toNoteDetailResponse(api: ApiNoteDetailData): NoteDetailResponse
     })),
   };
 }
+
+export type ApiTocMapResponse = Record<string, ApiTocItemFromMap[]>;
+
+export type ApiTocItemFromMap = {
+  id: number;
+  indexNumber: number;
+  startIndex: number;
+  endIndex: number;
+  title: string;
+  body: string;
+};

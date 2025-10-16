@@ -3,10 +3,29 @@ import { useEffect, useRef, useState, useCallback, memo } from 'react';
 import CategoryItem from './CategoryItem';
 import useUpdateCategoryName from '../../hooks/useUpdateCategoryName';
 
-function HamburgerIcon() {
+function EditIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="currentColor" />
+      <path
+        d="M20.71 7.04a1 1 0 0 0 0-1.41L18.37 3.29a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+function MinusIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M3 12h18" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
     </svg>
   );
 }
@@ -20,6 +39,7 @@ type Props = {
 function CategoryRowImpl({ id, name, noteCount }: Props) {
   const [isEdit, setIsEdit] = useState(false);
   const [draft, setDraft] = useState(name);
+  const [isOpen, setIsOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { update, isPending } = useUpdateCategoryName();
 
@@ -36,6 +56,10 @@ function CategoryRowImpl({ id, name, noteCount }: Props) {
     setDraft(name);
     setIsEdit(false);
   }, [name]);
+
+  const handleOpen = useCallback(() => {
+    setIsOpen(!isOpen);
+  }, [isOpen]);
 
   // 確定（API叩く）
   const handleConfirm = useCallback(async () => {
@@ -75,15 +99,15 @@ function CategoryRowImpl({ id, name, noteCount }: Props) {
 
   return (
     <li className="space-y-1">
-      <div className="flex items-center gap-2">
-        {isEdit ? (
-          <>
+      {isEdit ? (
+        <>
+          <div className="flex gap-1">
             <input
               ref={inputRef}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={onKeyDown}
-              className="px-2 py-1 rounded border text-sm"
+              className="flex-1 min-w-0 px-2 py-1 rounded border text-sm"
               aria-label="カテゴリ名を編集"
               disabled={isPending}
             />
@@ -91,42 +115,41 @@ function CategoryRowImpl({ id, name, noteCount }: Props) {
               type="button"
               onClick={handleConfirm}
               disabled={isPending}
-              className="px-2 py-1 rounded bg-black/80 text-white text-xs disabled:opacity-50"
+              className="w-20 whitespace-nowrap px-2 py-1 rounded bg-black/80 text-white text-sm disabled:opacity-50"
             >
               {isPending ? '保存中…' : '確定'}
             </button>
-            <button
-              type="button"
-              onClick={handleCancel}
-              disabled={isPending}
-              className="px-2 py-1 rounded border text-xs disabled:opacity-50"
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex justify-between items-center gap-1  ">
+            <h2
+              onClick={handleOpen}
+              className="bg-gray-100 rounded w-100 flex flex-1 cursor-pointer select-none items-center gap-1 py-1"
             >
-              キャンセル
-            </button>
-          </>
-        ) : (
-          <>
-            <h2 className="font-semibold">
-              {name}{' '}
-              <span className="ml-1 inline-flex items-center text-xs px-1.5 py-0.5 rounded bg-black/5">
+              <span className="inline-flex h-5 w-5 items-center justify-center">
+                {isOpen ? <MinusIcon /> : <PlusIcon />}
+              </span>
+
+              {/* 名前（折り返し抑制したいなら truncate 追加可） */}
+              <span className="font-semibold leading-none">{name}</span>
+
+              {/* バッジ */}
+              <span className="ml-1 inline-flex items-center rounded bg-white px-1.5 py-0.5 text-xs leading-none">
                 {noteCount}
               </span>
             </h2>
-            <button
-              type="button"
-              onClick={handleStart}
-              className="p-1 rounded hover:bg-black/5"
-              aria-label={`カテゴリ「${name}」を編集`}
-              title="編集"
-            >
-              <HamburgerIcon />
+
+            <button type="button" onClick={handleStart} className="p-1 rounded hover:bg-black/5" aria-label="編集">
+              <EditIcon />
             </button>
-          </>
-        )}
-      </div>
+          </div>
+        </>
+      )}
 
       {/* 子はノート一覧 */}
-      <CategoryItem categoryId={id} />
+      <CategoryItem categoryId={id} isOpen={isOpen} />
     </li>
   );
 }

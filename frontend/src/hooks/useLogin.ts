@@ -1,10 +1,18 @@
 // hooks/useLogin.ts
 import { useState, useEffect } from 'react';
-import customAxios from '../helpers/CustomAxios';
+import customAxios, { getOk } from '../helpers/CustomAxios';
 import { useSetAtom } from 'jotai';
-import { categoriesByIdAtom, loginUserAtom, notesByCategoryIdAtom, roleAtom } from '../states/UserAtom';
+import {
+  categoriesByIdAtom,
+  loginUserAtom,
+  notesByCategoryIdAtom,
+  roleAtom,
+  tocByNoteIdAtom,
+} from '../states/UserAtom';
 import type { LoginUser, NormalizedLoginResult, RawLoginResponse } from '../types/loginUser';
 import { normalizeLoginResponse } from '../helpers/normalizeLogin';
+import { normalizeTocMap } from '../helpers/nomalizeToc';
+import type { ApiTocMapResponse } from '../types/base';
 
 async function sendConfidential(loginId: string, loginPass: string) {
   const res = await customAxios.post('/auth/login', {
@@ -21,6 +29,7 @@ export default function useLogin() {
   const setLoginUser = useSetAtom(loginUserAtom);
   const setCategoriesById = useSetAtom(categoriesByIdAtom);
   const setNotesByCategoryId = useSetAtom(notesByCategoryIdAtom);
+  const setTocByNoteId = useSetAtom(tocByNoteIdAtom);
 
   useEffect(() => {
     const saved = localStorage.getItem('loginUser');
@@ -46,6 +55,15 @@ export default function useLogin() {
       setCategoriesById(new Map(categoriesById));
       setNotesByCategoryId(new Map(notesByCategoryId));
       setLoginUser(loginUser);
+
+      try {
+        // インターセプタが ApiResponse を“剥がす”ので、素直に中身を受け取れる
+        const resp = await getOk<ApiTocMapResponse>('/notes/toc');
+        setTocByNoteId(normalizeTocMap(resp));
+      } catch (e) {
+        console.warn('preload /notes/toc failed:', e);
+      }
+
       return true;
     } catch (e) {
       console.error(e);

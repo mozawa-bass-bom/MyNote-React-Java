@@ -23,8 +23,11 @@ import com.mynote.app.api.dto.note.NoteRequestDto;
 import com.mynote.app.api.dto.note.NoteResponseDto;
 import com.mynote.app.api.dto.note.PageExplanationEditRequestDto;
 import com.mynote.app.api.dto.note.PageResponseDto;
+import com.mynote.app.api.dto.note.TocExplanationEditRequestDto;
 import com.mynote.app.api.dto.note.TocRenameRequestDto;
 import com.mynote.app.api.dto.note.TocResponseDto;
+import com.mynote.app.api.service.note.NoteIndexService;
+import com.mynote.app.api.service.note.NotePageService;
 import com.mynote.app.api.service.note.NoteService;
 import com.mynote.app.api.service.upload.FirebaseStorageService;
 
@@ -39,6 +42,8 @@ import lombok.extern.slf4j.Slf4j;
 public class NoteApiController {
 
 	private final NoteService noteService;
+	private final NoteIndexService noteIndexService;
+	private final NotePageService notePageService;
 	private final FirebaseStorageService firebaseStorageService;
 
 	@PostMapping("/create")
@@ -109,7 +114,7 @@ public class NoteApiController {
 	
 	// --- PATCH (更新) ---
 
-	/** ノート概要HTML更新 */
+	/** ノート概要更新 */
 	@PatchMapping("/{userSeqNo}/description")
 	public ResponseEntity<ApiResponse<Void>> updateDescription(@PathVariable Integer userSeqNo,
 			@RequestBody NoteDescriptionUpdateDto req,
@@ -146,8 +151,27 @@ public class NoteApiController {
 		log.info("TOC title renamed successfully: tocId={}", tocId);
 		return ResponseEntity.ok(ApiResponse.ok(null, "UPDATED"));
 	}
+	
+	/** 目次タイトルのリネーム */
+	@PatchMapping("/toc/{tocId}/rebody")
+	public ResponseEntity<ApiResponse<Void>> rebodyToc(@PathVariable Long tocId,
+			@RequestBody TocExplanationEditRequestDto req,
+			@SessionAttribute("userId") Long userId) {
+		log.info("[PATCH] renameToc: userId={}, tocId={}", userId, tocId);
 
-	/** ページOCRテキストの保存 */
+		// Service層でtocIdとuserIdを元に権限チェックと更新を実行
+		boolean updatedCount = noteIndexService.updateBody(tocId, req.getBody());
+
+		if (!updatedCount) {
+			log.warn("TOC not found or forbidden: userId={}, tocId={}", userId, tocId);
+			return ResponseEntity.status(404).body(ApiResponse.failWithErrors("not_found_or_forbidden", null));
+		}
+
+		log.info("TOC title renamed successfully: tocId={}", tocId);
+		return ResponseEntity.ok(ApiResponse.ok(null, "UPDATED"));
+	}
+
+	/** ページテキストの保存 */
 	@PatchMapping("/pages/{pageId}/text")
 	public ResponseEntity<ApiResponse<Void>> updatePageText(@PathVariable Long pageId,
 			@RequestBody PageExplanationEditRequestDto req,
@@ -155,9 +179,9 @@ public class NoteApiController {
 		log.info("[PATCH] updatePageText: userId={}, pageId={}", userId, pageId);
 
 		// Service層でpageIdとuserIdを元に権限チェックと更新を実行
-		int updatedCount = noteService.updatePageText(userId, pageId, req.getExtractedText());
+		boolean updatedCount = notePageService.updateExtractedText( pageId, req.getExtractedText());
 
-		if (updatedCount == 0) {
+		if (!updatedCount) {
 			log.warn("Page not found or forbidden: userId={}, pageId={}", userId, pageId);
 			return ResponseEntity.status(404).body(ApiResponse.failWithErrors("not_found_or_forbidden", null));
 		}
@@ -166,7 +190,7 @@ public class NoteApiController {
 		return ResponseEntity.ok(ApiResponse.ok(null, "UPDATED"));
 	}
 
-	// NoteApiController.java
+
 
 	@DeleteMapping("/{userSeqNo}")
 	public ResponseEntity<Void> deleteNote(

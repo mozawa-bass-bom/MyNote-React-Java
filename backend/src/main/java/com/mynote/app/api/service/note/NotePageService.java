@@ -69,7 +69,6 @@ public class NotePageService {
             log.info("Attempting to update extracted text for pageId={}", pageId);
             
             // NotePageMapperのupdateExtractedTextは更新件数を返すとして、Service側でチェックする設計も可能ですが、
-            // ここでは単に例外を捕捉する try-catch の形を採用します。
             notePageMapper.updateExtractedText(pageId, extractedText);
             
             log.info("Extracted text updated successfully for pageId={}", pageId);

@@ -1,7 +1,5 @@
 package com.mynote.app.api.service.upload;
 
-import static com.mynote.app.util.TextFormatUtils.*;
-
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
@@ -324,9 +322,8 @@ public class UploadFacadeService {
 				}
 
 				// 優先順位：Markdown → HTML → legacy
-				String text = trimToNull(markdownToPlain(pd.getDetailedExplanationMarkdown()));
-				if (text == null)
-					text = trimToNull(htmlToPlain(pd.getDetailedExplanationHtml()));
+				String text = trimToNull(pd.getDetailedExplanationMarkdown());
+
 				if (text == null)
 					continue;
 
