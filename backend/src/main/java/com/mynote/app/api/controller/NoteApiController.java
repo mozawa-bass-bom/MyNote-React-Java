@@ -152,7 +152,7 @@ public class NoteApiController {
 		return ResponseEntity.ok(ApiResponse.ok(null, "UPDATED"));
 	}
 	
-	/** 目次タイトルのリネーム */
+	/** 目次説明文のリネーム */
 	@PatchMapping("/toc/{tocId}/rebody")
 	public ResponseEntity<ApiResponse<Void>> rebodyToc(@PathVariable Long tocId,
 			@RequestBody TocExplanationEditRequestDto req,

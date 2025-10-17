@@ -9,3 +9,4 @@ public class CategoryRequestDto {
 	private String prompt1;
 	private String prompt2;
 }
+	

@@ -7,6 +7,8 @@ import jakarta.validation.constraints.NotNull;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.mynote.app.api.service.upload.ProcessStatusEvent.Mode;
+
 import lombok.Data;
 
 /** G03-1: PDFアップロード時の入力 */
@@ -43,5 +45,6 @@ public class PdfUploadRequestDto implements Serializable {
     /** 入力したプロンプトをカテゴリのデフォルトとして保存するか（任意） */
     private Boolean saveAsDefault;
 
+    private Mode mode;
 
 }

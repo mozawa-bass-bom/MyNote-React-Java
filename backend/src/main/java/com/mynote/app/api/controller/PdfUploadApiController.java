@@ -52,7 +52,7 @@ public class PdfUploadApiController {
         SseEmitter emitter = uploadFacadeService.addEmitter(userId);
 
         // 2. モード解決（未指定は FULL）
-        Mode mode = resolveMode(req);
+        Mode mode = req.getMode();
 
         // 3. カテゴリ解決
         Long categoryId;
@@ -126,21 +126,5 @@ public class PdfUploadApiController {
         }
     }
 
-    /**
-     * リクエストから Mode を素直に解決（未指定/不正値は FULL）
-     * - 文字列の getMode(): "FULL" / "SIMPLE" を想定
-     * - フィールドが無ければ FULL にフォールバック
-     */
-    private Mode resolveMode(PdfUploadRequestDto req) {
-        try {
-            // もし DTO に getMode()（String）があるなら利用
-            var m = PdfUploadRequestDto.class.getMethod("getMode").invoke(req);
-            if (m instanceof String s && !s.isBlank()) {
-                try { return Mode.valueOf(s.trim().toUpperCase()); } catch (IllegalArgumentException ignore) {}
-            }
-        } catch (NoSuchMethodException ignore) {
-            // フィールドが無い場合は FULL にフォールバック
-        } catch (Exception ignore) { }
-        return Mode.FULL;
-    }
+
 }

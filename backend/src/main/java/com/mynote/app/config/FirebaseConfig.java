@@ -43,6 +43,7 @@ public class FirebaseConfig {
     }
     return FirebaseApp.getInstance();
   }
+  
   @Bean
   public Storage storage(GoogleCredentials firebaseCredentials) {
     return StorageOptions.newBuilder()
@@ -51,4 +52,7 @@ public class FirebaseConfig {
         .getService();
   }
   public String getFirebaseStorageBucket() { return firebaseStorageBucket; }
+  
+
 }
+

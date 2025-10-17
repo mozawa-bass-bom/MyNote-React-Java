@@ -63,9 +63,14 @@ public class UploadFacadeService {
 	public SseEmitter addEmitter(Long userId) {
 		SseEmitter emitter = new SseEmitter(10 * 60 * 1000L);
 		emitters.put(userId, emitter);
-		try {
-			emitter.send(SseEmitter.event().name("connect").data("Connection established"));
-		} catch (IOException e) {
+	    try {
+	
+	        emitter.send(
+	            SseEmitter.event()
+	                .name("connect")
+	                .data(Map.of("message", "Connection established"), MediaType.APPLICATION_JSON)
+	        );
+	    } catch (IOException e) {
 			emitters.remove(userId);
 		}
 		emitter.onCompletion(() -> emitters.remove(userId));
