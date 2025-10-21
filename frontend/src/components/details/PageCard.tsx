@@ -15,11 +15,10 @@ const PageCard = memo(function PageCard({ p }: Props) {
           alt={`page ${p.pageNumber}`}
           className="h-auto w-full rounded-md outline outline-2 outline-gray-200"
         />
-        {p.extractedText && (
-          <div className="min-h-[120px]">
-            <Editor pageId={p.id} markdown={p.extractedText ?? ' '} />
-          </div>
-        )}
+
+        <div className="min-h-100">
+          <Editor pageId={p.id} markdown={p.extractedText ?? ' '} />
+        </div>
       </div>
     </div>
   );

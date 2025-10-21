@@ -95,14 +95,15 @@ export default function Editor({ pageId, markdown, readOnly = false }: Props) {
   }
 
   return (
-    <div>
+    <div className="h-full">
       <MDXEditor
         ref={editorRef}
         markdown={markdown}
         readOnly={readOnly}
         onBlur={handleBlur}
+        className="h-full"
         contentEditableClassName={[
-          'prose max-w-none min-h-[200px] p-2 rounded-md',
+          'prose max-w-none min-h-full p-2 rounded-md h-full',
           'border',
           saving ? 'border-blue-300 ring-2 ring-blue-100' : 'border-gray-200',
         ].join(' ')}

@@ -10,5 +10,5 @@ public class AiSectionDto {
     private String title;
     private Integer startPage;
     private Integer endPage;
-    private String contentSummaryHtml;  // 任意
-}
+    private String contentSummaryMd;
+    }

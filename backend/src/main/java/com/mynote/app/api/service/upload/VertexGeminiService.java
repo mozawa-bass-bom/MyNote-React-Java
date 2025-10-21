@@ -5,39 +5,28 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.genai.Client;
-import com.google.genai.types.Content;
-import com.google.genai.types.GenerateContentConfig;
-import com.google.genai.types.GenerateContentResponse;
-import com.google.genai.types.HttpOptions;
-import com.google.genai.types.Part;
+import com.google.cloud.vertexai.VertexAI;
+import com.google.cloud.vertexai.api.Content;
+import com.google.cloud.vertexai.api.GenerateContentResponse;
+import com.google.cloud.vertexai.api.GenerationConfig;          // ★ こちらを使う
+import com.google.cloud.vertexai.api.Part;
+import com.google.cloud.vertexai.api.Schema;
+import com.google.cloud.vertexai.api.Type;
+import com.google.cloud.vertexai.generativeai.GenerativeModel;
 import com.mynote.app.api.dto.ai.AiIngestRequestDto;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class VertexGeminiService {
 
-  @Value("${gemini.project-id}")  private String projectId;
-  @Value("${gemini.location}")    private String location;
+  private final VertexAI vertexAI;
+
   @Value("${gemini.model-id:gemini-2.5-flash}")
   private String defaultModelId;
 
-  private Client newClient() {
-    return Client.builder()
-        .project(projectId)
-        .location(location)
-        .vertexAI(true)                                // Vertex AI 経由
-        .httpOptions(HttpOptions.builder().apiVersion("v1").build())
-        .build();
-  }
-
-  /**
-   * OCRテキストに対し、追加指示を反映して JSON を生成 → DTO にパース。
-   */
   public AiIngestRequestDto generateIngestPayload(
       Long noteId,
       String ocrText,
@@ -45,136 +34,122 @@ public class VertexGeminiService {
       String pagePrompt,
       String modelId
   ) {
-    final String model = (modelId == null || modelId.isBlank()) ? defaultModelId : modelId;
+    final String modelName = (modelId == null || modelId.isBlank()) ? defaultModelId : modelId;
 
-    // ---- System instruction（役割・制約）
-    // --- スタイル規約（System Instruction）---
-    String systemInstructionText = String.join("\n",
-    		  "あなたはドキュメントの要約と目次・ページ別の要点抽出を行うアシスタントです。",
-    		  "【厳守事項】",
-    		  "- 出力は必ず純粋なJSONのみ（説明文やコードフェンスは禁止）。",
-    		  "- HTMLは安全な最小タグのみ: h2,h3,p,ul,ol,li,strong,em,hr。",
-    		  "- セクションタイトル（sections[].title）は全角/半角を問わず12文字以内。超える場合は短くリライト。句読点だけのタイトルは禁止。",
-    		  "- ページ解説は用語の解説を中心に、複雑な内容は簡潔に噛み砕く。不要なら無理に文章を作らず空文字を許容。"
-    		  + "「このページの解説です」等の定型前置きは禁止。直ちに内容から始める。",
-    		  "",
-    		  "【生成手順（必須）】",
-    		  "1) まず全ページのOCRテキスト（`--- Page N ---` 見出しで区切り）を読み、論理的なトピック単位で目次（sections）を作る。",
-    		  "2) 各セクションの startPage / endPage を、そのトピックがまたぐ実在ページ範囲に正確に設定する（昇順・過不足なし・重複なし）。",
-    		  "3) 次に pageDetails を、各ページごとに作成する（pageNumber 昇順、存在ページのみ）。",
-    		  "",
-    		  "【Markdown/HTMLの同一性】",
-    		  "- pageDetails[].detailedExplanationMarkdown と detailedExplanationHtml は内容が**完全に一致**すること（表現形式が異なるだけ）。",
-    		  "- まずMarkdownで構成したうえで、同内容のHTMLを生成せよ（文言差・省略・追加を禁止）。",
-    		  "",
-    		  "【制約】",
-    		  "- sections[].startPage/endPage は存在範囲内、start<=end。",
-    		  "- pageDetails[].pageNumber は存在範囲内、昇順。",
-    		  "- 冗長な言い換えや推測は避け、事実ベースで簡潔に。"
-    		);
+  
+    String sysText = String.join("\n",
+    	    "あなたはドキュメントの要約と目次・ページ別の要点抽出を行うアシスタントです。",
+    	    "",
+    	    "【厳守事項】",
+    	    "- 出力は必ず純粋なJSONのみ（説明文やコードフェンスは禁止）。",
+    	    "- すべての本文は Markdown とする（#見出し, 箇条書き, 強調 などを使用可）。",
+    	    "- セクションタイトル（sections[].title）は12文字以内。句読点のみのタイトルは禁止。",
+    	    "- ページ解説は用語解説中心で簡潔に。不要なら空文字可。前置き定型は禁止。内容が変わる場合は改行を入れる。",
+    	    "",
+    	    "【生成手順】",
+    	    "1) 全ページOCR（`--- Page N ---`区切り）を読み、論理トピックで sections を作る。",
+    	    "2) sections[].startPage/endPage は実在範囲、昇順、重複/過不足なし。",
+    	    "3) pageDetails は存在ページ分を pageNumber 昇順で作る。",
+    	    "",
+    	    "【制約】",
+    	    "- sections[].startPage<=endPage、存在範囲内。",
+    	    "- pageDetails[].pageNumber は存在範囲内、昇順。",
+    	    "- 冗長・推測は避け、事実ベースで簡潔に。",
+    	    "",
+    	    "【Markdown改行・レイアウト規約（厳守）】",
+    	    "- 1行=1文（いわゆるセマンティック改行）。句点「。」「！」「？」の直後で改行する。",
+    	    "- 段落（文のまとまり）の間には「空行1つ」を入れる（空行2連続は禁止）。",
+    	    "- 見出しの前後には必ず空行1つ（例: 見出しの直後に本文が来るときも空行）。",
+    	    "- 箇条書きは `- ` を使う（`*` や `・` は禁止）。各項目は1行=1文。小見出し→箇条書きの順。",
+    	    "- 強調は **太字** のみ。下線/斜体/絵文字/HTMLタグ/`<br>` は禁止。",
+    	    "- 表は使わない（改行と箇条書きで構造化）。",
+    	    "- 改行を入れない長文（1行120文字超）は作らない。句点まで待てない場合は読点「、」で分割して改行してよい。"
+    	);
 
-
-    Content systemInstruction = Content.builder()
-        .role("system")
-        .parts(Part.fromText(systemInstructionText))
-        .build(); // systemInstruction(Content) に渡す
-
-    String userPrompt =
-    	    "追加指示（目次方針）:\n" + nvl(tocPrompt) +
-    	    "\n\n追加指示（ページ注釈方針）:\n" + nvl(pagePrompt) +
-    	    "\n\n【注記】上記の方針は必ず反映してください。Markdown と HTML は**同一内容**にしてください。" +
-    	    // ★ ページ区切り表記の整合性に関する注意
-    	    "\n\n=== OCR抽出テキスト（全ページ、`--- Page N ---`で区切り） ===\n" + nvl(ocrText);
-
-    Content userContent = Content.fromParts(Part.fromText(userPrompt));
-
-    // ---- JSON Schema（Mapで定義し responseJsonSchema に渡す）
-    
-    // ImmutableMap.of の制限（最大5ペア）を超えるため、builderを使用する
-    var propertiesBuilder = ImmutableMap.<String, Object>builder();
-    
-    propertiesBuilder.put("documentSummary", ImmutableMap.of(
-      "type", "array",
-      "items", ImmutableMap.of(
-        "type", "object",
-        "properties", ImmutableMap.of(
-          "overallSummaryHtml", ImmutableMap.of("type", "string")
-        ),
-        "required", ImmutableList.of("overallSummaryHtml")
-      )
-    ));
-    
-    propertiesBuilder.put("sections", ImmutableMap.of(
-      "type", "array",
-      "minItems", 1, 
-      "maxItems", 500,
-      "items", ImmutableMap.of(
-        "type", "object",
-        "additionalProperties", false,
-        "properties", ImmutableMap.of(
-          "title", ImmutableMap.of("type", "string", "maxLength", 12),
-          "startPage", ImmutableMap.of("type", "integer", "minimum", 1), 
-          "endPage", ImmutableMap.of("type", "integer", "minimum", 1),   
-          "contentSummaryHtml", ImmutableMap.of("type", "string", "maxLength", 4000)
-        ),
-        "required", ImmutableList.of("title","startPage","endPage")
-      )
-    ));
-    
-    propertiesBuilder.put("pageDetails", ImmutableMap.of(
-      "type", "array",
-      "minItems", 1, 
-      "maxItems", 500,
-      "items", ImmutableMap.of(
-        "type", "object",
-        "additionalProperties", false,
-        "properties", ImmutableMap.of(
-          "pageNumber", ImmutableMap.of("type", "integer", "minimum", 1), 
-          // ★ 空文字許容のためminLength: 0を追加
-          "detailedExplanationHtml", ImmutableMap.of("type", "string", "maxLength", 16000, "minLength", 0), 
-          "detailedExplanationMarkdown", ImmutableMap.of("type", "string", "maxLength", 16000, "minLength", 0) // ★ 空文字許容のためminLength: 0を追加
-        ),
-        "required", ImmutableList.of("pageNumber","detailedExplanationHtml", "detailedExplanationMarkdown") 
-      )
-    ));
-    
-    // メタデータフィールドを追加（合計7キーのためBuilder必須）
-    propertiesBuilder.put("model",      ImmutableMap.of("type", "string"));
-    propertiesBuilder.put("promptToc",  ImmutableMap.of("type", "string"));
-    propertiesBuilder.put("promptPage", ImmutableMap.of("type", "string"));
-    propertiesBuilder.put("rawJson",    ImmutableMap.of("type", "string"));
-
-    var propertiesMap = propertiesBuilder.build();
-    
-    // トップレベルのスキーマ定義（キーが複数あるためBuilder使用）
-    var responseSchema = ImmutableMap.<String, Object>builder()
-        .put("type", "object")
-        .put("additionalProperties", false) // ★ トップレベルに additionalProperties: false を追加
-        .put("properties", propertiesMap)
-        .put("required", ImmutableList.of("documentSummary","sections","pageDetails"))
+    Content systemInstruction = Content.newBuilder()
+        .setRole("system")
+        .addParts(Part.newBuilder().setText(sysText))
         .build();
 
-    GenerateContentConfig config = GenerateContentConfig.builder()
-        .systemInstruction(systemInstruction) // Content を渡す
-        .responseMimeType("application/json")
-        .responseJsonSchema(responseSchema)   // Map をそのまま渡せる
+    // --- User prompt（Markdown一本化）
+    String userText =
+        "追加指示（目次方針）:\n" + nvl(tocPrompt) +
+        "\n\n追加指示（ページ注釈方針）:\n" + nvl(pagePrompt) +
+        "\n\n【注記】上記方針は必ず反映。本文はすべて Markdown。" +
+        "\n\n=== OCR抽出テキスト（全ページ、`--- Page N ---`区切り） ===\n" + nvl(ocrText);
+
+    Content userContent = Content.newBuilder()
+        .setRole("user")
+        .addParts(Part.newBuilder().setText(userText))
         .build();
 
+    // --- JSON Schema（*Html → *Md に変更）
+    Schema pageDetailSchema = Schema.newBuilder()
+        .setType(Type.OBJECT)
+        .putProperties("pageNumber", Schema.newBuilder().setType(Type.INTEGER).build())
+        .putProperties("detailedExplanationMd", Schema.newBuilder().setType(Type.STRING).build()) // ★
+        .addRequired("pageNumber").addRequired("detailedExplanationMd")
+        .build();
 
-    try (Client client = newClient()) {
-      GenerateContentResponse resp =
-          client.models.generateContent(model, userContent, config);
-      String raw = resp.text();
+    Schema sectionSchema = Schema.newBuilder()
+        .setType(Type.OBJECT)
+        .putProperties("title", Schema.newBuilder().setType(Type.STRING).build())
+        .putProperties("startPage", Schema.newBuilder().setType(Type.INTEGER).build())
+        .putProperties("endPage", Schema.newBuilder().setType(Type.INTEGER).build())
+        .putProperties("contentSummaryMd", Schema.newBuilder().setType(Type.STRING).build()) // ★
+        .addRequired("title").addRequired("startPage").addRequired("endPage")
+        .build();
 
+    Schema documentSummaryItemSchema = Schema.newBuilder()
+        .setType(Type.OBJECT)
+        .putProperties("overallSummaryMd", Schema.newBuilder().setType(Type.STRING).build()) // ★
+        .addRequired("overallSummaryMd")
+        .build();
+
+    Schema responseSchema = Schema.newBuilder()
+        .setType(Type.OBJECT)
+        .putProperties("documentSummary", Schema.newBuilder().setType(Type.ARRAY).setItems(documentSummaryItemSchema).build())
+        .putProperties("sections", Schema.newBuilder().setType(Type.ARRAY).setItems(sectionSchema).build())
+        .putProperties("pageDetails", Schema.newBuilder().setType(Type.ARRAY).setItems(pageDetailSchema).build())
+        .putProperties("model", Schema.newBuilder().setType(Type.STRING).build())
+        .putProperties("promptToc", Schema.newBuilder().setType(Type.STRING).build())
+        .putProperties("promptPage", Schema.newBuilder().setType(Type.STRING).build())
+        .putProperties("rawJson", Schema.newBuilder().setType(Type.STRING).build())
+        .addRequired("documentSummary").addRequired("sections").addRequired("pageDetails")
+        .build();
+
+    GenerationConfig genConfig = GenerationConfig.newBuilder()
+        .setResponseMimeType("application/json")
+        .setResponseSchema(responseSchema)
+        .build();
+
+    try {
+      GenerativeModel model = new GenerativeModel(modelName, vertexAI)
+          .withSystemInstruction(systemInstruction)
+          .withGenerationConfig(genConfig);
+
+      GenerateContentResponse resp = model.generateContent(userContent);
+
+      String raw = "";
+      if (resp.getCandidatesCount() > 0) {
+        var cand = resp.getCandidates(0);
+        if (cand.hasContent() && cand.getContent().getPartsCount() > 0) {
+          raw = cand.getContent().getParts(0).getText();
+        }
+      }
+
+      System.out.println("Generated AiIngestRequestDto: " + raw);
       ObjectMapper om = new ObjectMapper()
           .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
       AiIngestRequestDto dto = om.readValue(raw, AiIngestRequestDto.class);
       dto.setNoteId(noteId);
-      dto.setModel(model);
+      dto.setModel(modelName);
       dto.setPromptToc(tocPrompt);
       dto.setPromptPage(pagePrompt);
       dto.setRawJson(raw);
       return dto;
+
     } catch (Exception e) {
       log.error("Gemini call/parse failed", e);
       throw new RuntimeException("Gemini failed: " + e.getMessage(), e);
@@ -182,6 +157,4 @@ public class VertexGeminiService {
   }
 
   private static String nvl(String s){ return s == null ? "" : s; }
-
-
 }

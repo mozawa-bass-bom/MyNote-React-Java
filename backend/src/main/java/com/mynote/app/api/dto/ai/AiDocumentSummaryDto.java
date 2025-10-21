@@ -7,5 +7,5 @@ import lombok.Data;
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AiDocumentSummaryDto {
-    private String overallSummaryHtml;
+    private String overallSummaryMd;
 }

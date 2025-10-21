@@ -8,8 +8,6 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AiPageDetailDto {
     private Integer pageNumber;
-
-    private String detailedExplanationHtml;
-    private String detailedExplanationMarkdown;
+    private String detailedExplanationMd;
 
 }

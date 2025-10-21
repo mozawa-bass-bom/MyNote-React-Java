@@ -23,17 +23,17 @@
   </properties>
 
   <!-- Google Cloud BOM -->
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>com.google.cloud</groupId>
-        <artifactId>libraries-bom</artifactId>
-        <version>26.67.0</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
+<dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>libraries-bom</artifactId>
+      <version>26.67.0</version> 
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
+  </dependencies>
+</dependencyManagement>
 
   <dependencies>
     <!-- Spring Boot -->
@@ -97,7 +97,7 @@
 
     <!-- Google Cloud (Vertex AI / Vision / Storage) -->
 
-    <dependency>
+<dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-vision</artifactId>
     </dependency>
@@ -105,11 +105,11 @@
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-storage</artifactId>
     </dependency>
-<dependency>
-  <groupId>com.google.genai</groupId>
-  <artifactId>google-genai</artifactId>
-  <version>1.18.0</version>
-</dependency>
+    <dependency>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>google-cloud-vertexai</artifactId>
+
+    </dependency>
 
     <!-- PDFBox -->
     <dependency>

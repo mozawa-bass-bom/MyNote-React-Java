@@ -267,7 +267,7 @@ public class UploadFacadeService {
 		// 1) 文書要約 → notes.description
 		if (req.getDocumentSummary() != null && !req.getDocumentSummary().isEmpty()) {
 			String summaryHtml = req.getDocumentSummary().stream()
-					.map(ds -> trimToNull(ds == null ? null : ds.getOverallSummaryHtml()))
+					.map(ds -> trimToNull(ds == null ? null : ds.getOverallSummaryMd()))
 					.filter(s -> s != null && !s.isBlank())
 					.collect(Collectors.joining("<hr/>"));
 			if (!summaryHtml.isBlank()) {
@@ -297,7 +297,7 @@ public class UploadFacadeService {
 				indexDto.setStartIndex(s.getStartPage());
 				indexDto.setEndIndex(s.getEndPage());
 				indexDto.setTitle(title);
-				indexDto.setBody(nullToEmpty(s.getContentSummaryHtml()));
+				indexDto.setBody(nullToEmpty(s.getContentSummaryMd()));
 				noteIndexService.createNoteIndex(indexDto);
 			}
 		}
@@ -327,8 +327,7 @@ public class UploadFacadeService {
 				}
 
 				// 優先順位：Markdown → HTML → legacy
-				String text = trimToNull(pd.getDetailedExplanationMarkdown());
-
+				  String text = trimToNull(pd.getDetailedExplanationMd());
 				if (text == null)
 					continue;
 
