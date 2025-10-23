@@ -63,7 +63,6 @@ export default function Editor({ pageId, markdown, readOnly = false }: Props) {
   );
 
   async function handleBlur() {
-    // ref から現テキスト取得
     const md = editorRef.current?.getMarkdown();
     if (typeof md !== 'string') return;
 
@@ -71,16 +70,12 @@ export default function Editor({ pageId, markdown, readOnly = false }: Props) {
     const prev = lastSavedRef.current.trim();
 
     if (trimmed === prev) return;
-
-    if (trimmed.length === 0) {
-      return;
-    }
+    if (trimmed.length === 0) return;
 
     try {
       setSaving(true);
       await patchOk<ApiResponse<void>>(`notes/pages/${pageId}/text`, { extractedText: md });
-      lastSavedRef.current = md; // 保存済みに更新
-
+      lastSavedRef.current = md;
       // toast.success('保存しました');
     } catch (e: unknown) {
       if (axios.isCancel?.(e)) return;
@@ -95,15 +90,23 @@ export default function Editor({ pageId, markdown, readOnly = false }: Props) {
   }
 
   return (
-    <div className="h-full">
+    <div className="h-full min-h-0">
       <MDXEditor
         ref={editorRef}
         markdown={markdown}
         readOnly={readOnly}
         onBlur={handleBlur}
-        className="h-full"
+        className={[
+          // ルート：将来ツールバー等を入れても安定するよう縦flex化
+          'h-full flex flex-col',
+          // 中間ラッパー（.mdxeditor-root-contenteditable）を「親」として伸ばす
+          '[&_.mdxeditor-root-contenteditable]:grid',
+          '[&_.mdxeditor-root-contenteditable]:flex-1',
+          '[&_.mdxeditor-root-contenteditable]:min-h-0',
+        ].join(' ')}
         contentEditableClassName={[
-          'prose max-w-none min-h-full p-2 rounded-md h-full',
+          // 編集領域：親の残り高さを占有しつつ、内容は中スクロール
+          'prose max-w-none p-2 rounded-md h-full min-h-0 overflow-auto',
           'border',
           saving ? 'border-blue-300 ring-2 ring-blue-100' : 'border-gray-200',
         ].join(' ')}

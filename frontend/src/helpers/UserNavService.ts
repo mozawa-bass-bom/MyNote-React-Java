@@ -8,6 +8,6 @@ interface UserDataResponse {
 }
 
 export const getNavById = async (userId: number): Promise<UserDataResponse> => {
-  const { data } = await customAxios.post<UserDataResponse>('/nav', { userId });
+  const { data } = await customAxios.post<UserDataResponse>('notes/upload/nav', { userId });
   return data;
 };

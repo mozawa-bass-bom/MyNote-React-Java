@@ -1,5 +1,5 @@
 // hooks/useLogin.ts
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import customAxios, { getOk } from '../helpers/CustomAxios';
 import { useSetAtom } from 'jotai';
 import {
@@ -9,75 +9,74 @@ import {
   roleAtom,
   tocByNoteIdAtom,
 } from '../states/UserAtom';
-import type { LoginUser, NormalizedLoginResult, RawLoginResponse } from '../types/loginUser';
+import type { RawLoginResponse } from '../types/loginUser';
 import { normalizeLoginResponse } from '../helpers/normalizeLogin';
 import { normalizeTocMap } from '../helpers/nomalizeToc';
 import type { ApiTocMapResponse } from '../types/base';
+import { useNavigate } from 'react-router-dom';
 
-async function sendConfidential(loginId: string, loginPass: string) {
-  const res = await customAxios.post('/auth/login', {
-    userName: loginId,
-    password: loginPass,
-  });
-  return res.data as RawLoginResponse;
+async function apiLogin(userName: string, password: string) {
+  const { data } = await customAxios.post<RawLoginResponse>('/auth/login', { userName, password });
+  return data;
+}
+
+async function apiFetchTocMap() {
+  return getOk<ApiTocMapResponse>('/notes/toc');
 }
 
 export default function useLogin() {
+  const navigate = useNavigate();
   const [isPending, setIsPending] = useState(false);
   const [isError, setIsError] = useState(false);
+  const runningRef = useRef(false); // 二重実行ガード
+
   const setRole = useSetAtom(roleAtom);
   const setLoginUser = useSetAtom(loginUserAtom);
   const setCategoriesById = useSetAtom(categoriesByIdAtom);
   const setNotesByCategoryId = useSetAtom(notesByCategoryIdAtom);
   const setTocByNoteId = useSetAtom(tocByNoteIdAtom);
 
-  useEffect(() => {
-    const saved = localStorage.getItem('loginUser');
-    if (saved) {
-      const user: LoginUser = JSON.parse(saved);
-      setLoginUser(user);
-    }
-  }, [setLoginUser]);
+  const resetAll = () => {
+    setLoginUser(null);
+    setRole('USER');
+    setCategoriesById(new Map());
+    setNotesByCategoryId(new Map());
+    setTocByNoteId(new Map());
+  };
 
-  // 戻り値: 成功なら true / 失敗なら false
   const login = async (loginId: string, loginPass: string): Promise<boolean> => {
+    if (runningRef.current) return false;
+    runningRef.current = true;
     setIsPending(true);
     setIsError(false);
-    try {
-      const raw = await sendConfidential(loginId, loginPass);
-      const { loginUser, categoriesById, notesByCategoryId, role }: NormalizedLoginResult = normalizeLoginResponse(raw);
 
-      // ★ 成功時のみ保存（キー名は 'authToken' に統一）
-      //
-      localStorage.setItem('authToken', loginUser.token);
-      localStorage.setItem('loginUser', JSON.stringify(loginUser));
+    try {
+      const raw = await apiLogin(loginId, loginPass);
+      const { loginUser, categoriesById, notesByCategoryId, role } = normalizeLoginResponse(raw);
+
       setRole(role);
-      setCategoriesById(new Map(categoriesById));
-      setNotesByCategoryId(new Map(notesByCategoryId));
+      setCategoriesById(new Map(categoriesById)); // Map<number, Category>
+      setNotesByCategoryId(new Map(notesByCategoryId)); // Map<number, NoteSummary[]>
       setLoginUser(loginUser);
 
+      // 2) 目次マップのプリロード（失敗しても致命ではない）
       try {
-        // インターセプタが ApiResponse を“剥がす”ので、素直に中身を受け取れる
-        const resp = await getOk<ApiTocMapResponse>('/notes/toc');
-        setTocByNoteId(normalizeTocMap(resp));
+        const tocResp = await apiFetchTocMap();
+        setTocByNoteId(normalizeTocMap(tocResp)); // Map<number, Toc[]>
       } catch (e) {
         console.warn('preload /notes/toc failed:', e);
       }
 
       return true;
     } catch (e) {
-      console.error(e);
+      console.error('login failed:', e);
       setIsError(true);
-
-      // ★ 失敗時は絶対に書き込まない & 念のため削除
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('loginUser');
-      setLoginUser(null);
-      setCategoriesById(new Map());
-      setNotesByCategoryId(new Map());
+      resetAll();
+      navigate('/', { replace: true });
       return false;
     } finally {
       setIsPending(false);
+      runningRef.current = false;
     }
   };
 

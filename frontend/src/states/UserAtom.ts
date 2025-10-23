@@ -26,6 +26,7 @@ export const resetAllUserStateAtom = atom(null, (_get, set) => {
   set(roleAtom, 'USER');
   set(categoriesByIdAtom, new Map());
   set(notesByCategoryIdAtom, new Map());
+  set(tocByNoteIdAtom, new Map());
   set(noteDetailByIdAtom, new Map());
   set(selectedCategoryIdAtom, null);
   set(selectedNoteIdAtom, null);

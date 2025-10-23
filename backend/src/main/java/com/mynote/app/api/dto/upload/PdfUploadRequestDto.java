@@ -27,6 +27,7 @@ public class PdfUploadRequestDto implements Serializable {
     @NotBlank
     private String noteTitle;
 
+    
     /** 既存カテゴリに入れるか（false=既存, true=新規作成） */
     private boolean createNewCategory;
 

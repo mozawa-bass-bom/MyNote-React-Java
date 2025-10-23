@@ -112,6 +112,7 @@ public class CategoryApiController {
 		return ResponseEntity.ok(ApiResponse.ok(null));
 	}
 
+	
 	// ---
 
 	//** カテゴリ削除 */

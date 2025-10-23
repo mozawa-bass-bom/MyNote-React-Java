@@ -163,7 +163,7 @@ public class UploadFacadeService {
 				return;
 			}
 
-			// Mode.FULL：必ずOCR（これも in-memory から）
+		
 			String ocrText = runOcrFromPages(result.getPages());
 			notifyClient(userId, ProcessStatusEvent.ocrDone(noteId, mode));
 			runAiFromOcr(noteId, ocrText, tocPrompt, pagePrompt);
@@ -173,7 +173,7 @@ public class UploadFacadeService {
 		} catch (Exception e) {
 			log.error("Async PDF processing failed for userId={} : {}", userId, e.getMessage(), e);
 			String msg = "処理中にエラーが発生しました: " + e.getMessage();
-			notifyClient(userId, ProcessStatusEvent.error(noteId, msg, mode)); // ← errorシグネチャ統一
+			notifyClient(userId, ProcessStatusEvent.error(noteId, msg, mode));
 		}
 	}
 

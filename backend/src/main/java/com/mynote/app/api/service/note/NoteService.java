@@ -224,9 +224,36 @@ public class NoteService {
 		dto.setExtractedText(notePage.getExtractedText());
 		return dto;
 	}
-
+	
 	/**
-	 * ノート概要HTMLを更新する
+	 * ノート名を更新する
+	 *
+	 * @param userId ユーザーID
+	 * @param userSeqNo ユーザー連番
+	 * @param title 新しいタイトル
+	 * @return 更新件数 (0: ノートが見つからない/権限がない, 1: 成功)
+	 */
+	@Transactional
+	public int renameNoteTitle(Long userId, Integer userSeqNo, String title) {
+	    log.debug("Service: renameNoteTitle userId={}, userSeqNo={}", userId, userSeqNo);
+
+	    // 所有者チェック ＆ 対象特定
+	    Note note = noteMapper.findByUserAndSeq(userId, userSeqNo);
+	    if (note == null) {
+	        log.warn("Note not found or forbidden: userId={}, userSeqNo={}", userId, userSeqNo);
+	        return 0;
+	    }
+
+	    // ここでバリデーション（必要なら）
+	    if (title == null || title.isBlank()) {
+	        throw new IllegalArgumentException("title is required");
+	    }
+
+	    return noteMapper.updateTitle(note.getId(), title.trim());
+	}
+	
+	/**
+	 * ノート概要を更新する
 	 *
 	 * @param userId ユーザーID
 	 * @param userSeqNo ユーザー連番
@@ -251,6 +278,8 @@ public class NoteService {
 		return 1;
 	}
 
+	
+	
 	/**
 	 * 目次タイトルのリネームを実行する。
 	 * 💡 tocIdからNoteの所有者をチェックするロジックを組み込みました。

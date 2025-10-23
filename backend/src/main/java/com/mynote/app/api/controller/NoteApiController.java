@@ -21,6 +21,7 @@ import com.mynote.app.api.dto.note.NoteByUserSeqNoResponceDto;
 import com.mynote.app.api.dto.note.NoteDescriptionUpdateDto;
 import com.mynote.app.api.dto.note.NoteRequestDto;
 import com.mynote.app.api.dto.note.NoteResponseDto;
+import com.mynote.app.api.dto.note.NoteTitleRenameRequestDto;
 import com.mynote.app.api.dto.note.PageExplanationEditRequestDto;
 import com.mynote.app.api.dto.note.PageResponseDto;
 import com.mynote.app.api.dto.note.TocExplanationEditRequestDto;
@@ -132,6 +133,29 @@ public class NoteApiController {
 		log.info("Note description updated successfully: userSeqNo={}", userSeqNo);
 		return ResponseEntity.ok(ApiResponse.ok(null, "UPDATED"));
 	}
+	
+	
+	/** ノートタイトルのリネーム */
+	@PatchMapping("/{userSeqNo}/title")
+	public ResponseEntity<ApiResponse<Void>> renameNoteTitle(
+	        @PathVariable Integer userSeqNo,
+	        @RequestBody NoteTitleRenameRequestDto req,
+	        @SessionAttribute("userId") Long userId) {
+	    log.info("[PATCH] renameNoteTitle: userId={}, userSeqNo={}", userId, userSeqNo);
+
+	    // Service層で userId / userSeqNo から所有権チェック＆更新を実行
+	    int updatedCount = noteService.renameNoteTitle(userId, userSeqNo, req.getTitle());
+
+	    if (updatedCount == 0) {
+	        log.warn("Note not found or forbidden: userId={}, userSeqNo={}", userId, userSeqNo);
+	        return ResponseEntity.status(404).body(ApiResponse.failWithErrors("not_found_or_forbidden", null));
+	    }
+
+	    log.info("Note title renamed successfully: userSeqNo={}", userSeqNo);
+	    return ResponseEntity.ok(ApiResponse.ok(null, "UPDATED"));
+	}
+
+	
 
 	/** 目次タイトルのリネーム */
 	@PatchMapping("/toc/{tocId}/rename")

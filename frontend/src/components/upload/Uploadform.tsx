@@ -1,15 +1,16 @@
 // src/components/upload/UploadForm.tsx
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { categoriesByIdAtom } from '../../states/UserAtom';
+import { categoriesByIdAtom, loginUserAtom } from '../../states/UserAtom';
 import customAxios, { getOk } from '../../helpers/CustomAxios';
 import { readSSE, toFormData, getAuthHeader } from '../../helpers/PdfuploadHelper';
 import type { PdfUploadRequest, Mode } from '../../types/upload';
+import { useRefreshNav } from '../../states/useRefreshNav';
 
 const SSE_URL = new URL('/api/notes/upload/process-stream', (customAxios.defaults.baseURL ?? '') + '/').toString();
 
 type CategoryPromptsDto = {
-  catedoryId: number;
+  categoryId: number; // ← typo修正（catedoryId -> categoryId）
   prompt1: string | null;
   prompt2: string | null;
 };
@@ -29,6 +30,9 @@ export default function UploadForm() {
 
   // 状態
   const [categories] = useAtom(categoriesByIdAtom);
+  const loginUser = useAtomValue(loginUserAtom);
+
+  const refreshNav = useRefreshNav(); // 共通：/nav と /notes/toc を選択的に再取得
   const [messages, setMessages] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const acRef = useRef<AbortController | null>(null);
@@ -51,7 +55,7 @@ export default function UploadForm() {
 
   const push = (s: string) => setMessages((m) => [...m, s]);
 
-  // 送信（multipart + SSE）— シンプル
+  // 送信（multipart + SSE）
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -95,14 +99,30 @@ export default function UploadForm() {
           body: fd,
           signal: ac.signal,
           credentials: 'include',
-          headers,
+          headers, // FormDataなのでContent-Typeは自動でboundary付与
         });
 
-        await readSSE(res, (evt) => {
+        if (!res.ok) {
+          throw new Error(`upload failed: ${res.status} ${res.statusText}`);
+        }
+
+        await readSSE(res, async (evt) => {
           setMessages((prev) => [...prev, `[${evt.code}] ${evt.message}`]);
+
           if (evt.code === 'ERROR') {
-            // 必要なら即リジェクトしたい場合は throw でもOK（ただし readSSE 内ではなくここで）
             throw new Error(evt.message);
+          }
+
+          // ★ 終端イベントでナビだけ再取得（B案）
+          if (evt.code === 'COMPLETE') {
+            const userId = loginUser?.userId;
+            if (userId) {
+              try {
+                await refreshNav({ userId, nav: true, toc: false });
+              } catch (e) {
+                console.warn('refresh /nav failed:', e);
+              }
+            }
           }
         });
       } catch (err) {
@@ -123,34 +143,32 @@ export default function UploadForm() {
       pagePrompt,
       saveAsDefault,
       mode,
+      loginUser,
+      refreshNav,
     ]
   );
 
   const handleCancel = useCallback(() => acRef.current?.abort(), []);
 
-  const handleChangeCategory = useCallback(
-    async (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const idStr = e.target.value;
-      const id = idStr ? Number(idStr) : '';
-      setExistingCategoryId(id);
+  const handleChangeCategory = useCallback(async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const idStr = e.target.value;
+    const id = idStr ? Number(idStr) : '';
+    setExistingCategoryId(id);
 
-      if (id === '') {
-        setTocPrompt('');
-        setPagePrompt('');
-        return;
-      }
-      const dto = await getOk<CategoryPromptsDto>(`/notes/categories/${id}/prompts`);
-
-      setTocPrompt(dto.prompt1 ? dto.prompt1 : '');
-      setPagePrompt(dto.prompt2 ? dto.prompt2 : '');
-    },
-    [setExistingCategoryId, setTocPrompt, setPagePrompt]
-  );
+    if (id === '') {
+      setTocPrompt('');
+      setPagePrompt('');
+      return;
+    }
+    const dto = await getOk<CategoryPromptsDto>(`/notes/categories/${id}/prompts`);
+    setTocPrompt(dto.prompt1 ?? '');
+    setPagePrompt(dto.prompt2 ?? '');
+  }, []);
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto w-full  space-y-4 rounded-xl p-4">
+    <form onSubmit={handleSubmit} className="mx-auto w-full space-y-4 rounded-xl p-4">
       {/* ファイル */}
-      <div className="space-y-1 ">
+      <div className="space-y-1">
         <label className="block text-sm font-medium">PDF ファイル</label>
         <input
           type="file"
@@ -163,13 +181,12 @@ export default function UploadForm() {
       </div>
 
       {/* 基本情報 */}
-      <div className="">
+      <div>
         <input
           type="hidden"
           value={originalFileName}
           onChange={(e) => setOriginalFileName(e.target.value)}
           disabled={submitting}
-          className=""
           placeholder="document.pdf"
         />
 

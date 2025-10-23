@@ -1,5 +1,7 @@
+// src/pages/categories/CategorySection.tsx
 import { memo } from 'react';
 import type { Category, NoteSummary } from '../../types/base';
+import { CategoryName } from './CategoryName';
 import { NoteRow } from './NoteRow';
 
 type Props = {
@@ -10,22 +12,21 @@ type Props = {
 };
 
 export const CategorySection = memo(function CategorySection({ category, notes, isOpen, onToggle }: Props) {
+  const noteCount = category.noteCount ?? notes.length;
+
   return (
     <>
-      {/* ヘッダ */}
+      {/* ヘッダー行：左に±（親が管理）、右にタイトル編集子 */}
       <div className="flex items-center justify-between p-3 rounded bg-gray-200" onClick={onToggle}>
         <div className="flex items-center gap-2">
-          <button className="w-6 h-6 border rounded text-xs" aria-label={isOpen ? '閉じる' : '開く'}>
+          <button type="button" className="w-6 h-6 border rounded text-xs" aria-label={isOpen ? '閉じる' : '開く'}>
             {isOpen ? '−' : '+'}
           </button>
-          <div className="font-medium">
-            {category.name}
-            <span className="ml-2 text-xs text-gray-500">({category.noteCount ?? notes.length})</span>
-          </div>
+
+          <CategoryName category={category} noteCount={noteCount} />
         </div>
       </div>
 
-      {/* ノート一覧 */}
       {isOpen && (
         <div className="py-3">
           {notes.length === 0 ? (
@@ -33,7 +34,7 @@ export const CategorySection = memo(function CategorySection({ category, notes, 
           ) : (
             <ul className="grid auto-rows-fr [grid-template-columns:repeat(auto-fit,minmax(260px,33%))]">
               {notes.map((n) => (
-                <li key={n.id} className="rounded  p-3 h-full">
+                <li key={n.id ?? n.userSeqNo} className="rounded p-3 h-full">
                   <NoteRow note={n} />
                 </li>
               ))}

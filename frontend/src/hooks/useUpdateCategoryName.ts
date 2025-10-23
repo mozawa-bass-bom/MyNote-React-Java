@@ -1,15 +1,14 @@
 // src/hooks/useUpdateCategoryName.ts
 import { useCallback, useState } from 'react';
 import customAxios from '../helpers/CustomAxios';
-import { useSetAtom, useAtomValue } from 'jotai';
+import { useAtom } from 'jotai';
 import { categoriesByIdAtom } from '../states/UserAtom';
 import type { Category } from '../types/base';
 
 export default function useUpdateCategoryName() {
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<unknown>(null);
-  const setCategoriesById = useSetAtom(categoriesByIdAtom);
-  const categoriesById = useAtomValue(categoriesByIdAtom);
+  const [categoriesById, setCategoriesById] = useAtom(categoriesByIdAtom);
 
   const update = useCallback(
     async (categoryId: number, newName: string) => {

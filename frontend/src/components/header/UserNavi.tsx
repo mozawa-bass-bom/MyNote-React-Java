@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import CategoriesPage from './Categories';
+import LogoutButton from '../ui/LogoutButton';
 
 export default function UserNavi() {
   return (
@@ -42,13 +43,7 @@ export default function UserNavi() {
 
         {/* フッター（下に固定させるために mt-auto） */}
         <div className="mt-auto border-t border-gray-200 px-3 py-3">
-          <button
-            type="button"
-            className="w-full rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:opacity-90"
-            // onClick={logout}
-          >
-            ログアウト
-          </button>
+          <LogoutButton />
         </div>
       </div>
     </aside>

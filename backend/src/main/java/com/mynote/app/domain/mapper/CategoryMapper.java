@@ -43,7 +43,9 @@ public interface CategoryMapper {
 	 * - G03-1（アップロード時）の「デフォルト保存」チェック時に使用。
 	 * - 設定画面で既定プロンプトを編集する場合にも利用可能。
 	 */
-	int updatePrompts(@Param("id") Long id,
+	int updatePrompts(
+			@Param("userId") Long userId,
+			@Param("id") Long id,
 			@Param("prompt1") String p1,
 			@Param("prompt2") String p2);
 

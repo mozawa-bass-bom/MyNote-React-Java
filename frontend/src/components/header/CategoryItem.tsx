@@ -5,7 +5,6 @@ import { notesByCategoryIdAtom } from '../../states/UserAtom';
 import { useMemo } from 'react';
 
 export default function CategoryItem({ categoryId, isOpen }: { categoryId: number; isOpen: boolean }) {
-  // categoryId 固有の配列だけを購読（他カテゴリ更新では再レンダリングしない）
   const notesAtom = useMemo(
     () =>
       selectAtom(

@@ -143,6 +143,24 @@ public class CategoryService {
      return updatedCount;
  }
 
+
+ /**
+  * カテゴリ名を更新する。
+  *
+  * @param id 更新対象のカテゴリID
+  * @param name 新しいカテゴリ名
+  * @return 更新件数 (1:成功, 0:失敗/見つからない)
+  */
+ @Transactional
+ public int  updatePrompts(Long userId ,Long id, String prompt1, String prompt2) {
+     log.debug("Service: updateName called with id={},prompt1={},prompt2={}",id, prompt1, prompt2);
+     
+     // データの永続化処理を実行
+     int updatedCount = categoryMapper.updatePrompts(userId,id, prompt1, prompt2);
+     
+     return updatedCount;
+ }
+ 
  /**
   * カテゴリを削除する。
   *
