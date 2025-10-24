@@ -1,44 +1,27 @@
-// state/applyNav.ts
+// state/useApplyNav.ts
 import { useSetAtom } from 'jotai';
-import {
-  categoriesByIdAtom,
-  notesByCategoryIdAtom,
-  tocByNoteIdAtom,
-  loginUserAtom,
-  roleAtom,
-} from '../states/UserAtom';
-import { normalizeTocMap } from '../helpers/nomalizeToc';
-import type { ApiTocMapResponse, Category, NoteSummary } from '../types/base';
+import { categoriesByIdAtom, notesByCategoryIdAtom, tocByNoteIdAtom } from '../states/UserAtom';
+import { normalizeTocMap } from '../helpers/normalizeToc';
+import type { ApiTocMapResponse } from '../types/base';
+import { normalizeCategory } from '../helpers/normalizeCategory';
+import type { Nav } from '../types/loginUser';
 
 export function useApplyNav() {
   const setCategories = useSetAtom(categoriesByIdAtom);
   const setNotesByCat = useSetAtom(notesByCategoryIdAtom);
   const setToc = useSetAtom(tocByNoteIdAtom);
-  const setRole = useSetAtom(roleAtom);
-  const setLoginUser = useSetAtom(loginUserAtom);
 
-  const applyNav = (p: { categories: Category[]; notes: NoteSummary[] }) => {
-    // 好きなMap化ロジックに置換
-    const catMap = new Map(p.categories.map((c) => [c.id, c]));
-    const notesMap = new Map<number, NoteSummary[]>();
-    for (const n of p.notes) {
-      const arr = notesMap.get(n.categoryId) ?? [];
-      arr.push(n);
-      notesMap.set(n.categoryId, arr);
-    }
-    setCategories(catMap);
-    setNotesByCat(notesMap);
+  const applyNav = (snapshot: Nav) => {
+    const { categoriesByIdMap, notesByCategoryIdMap } = normalizeCategory(
+      snapshot.categories,
+      snapshot.notesByCategory
+    );
+
+    setCategories(categoriesByIdMap);
+    setNotesByCat(notesByCategoryIdMap);
   };
 
   const applyToc = (tocResp: ApiTocMapResponse) => setToc(normalizeTocMap(tocResp));
 
-  const resetAll = () => {
-    setRole('USER');
-    setLoginUser(null);
-    setCategories(new Map());
-    setNotesByCat(new Map());
-    setToc(new Map());
-  };
-
-  return { applyNav, applyToc, resetAll };
+  return { applyNav, applyToc };
 }

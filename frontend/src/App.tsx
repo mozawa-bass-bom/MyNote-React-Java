@@ -8,6 +8,8 @@ import Upload from './pages/notes/Upload';
 import UserList from './pages/admin/UserList';
 import ContactList from './pages/admin/ContactList';
 import PageNotFound from './pages/PageNotFound';
+import ContactPage from './pages/contact/Index';
+import ContactConfirm from './pages/contact/Confirm';
 
 import UserLayout from './pages/layouts/UserLayout';
 import AdminLayout from './pages/layouts/AdminLayout';
@@ -23,6 +25,12 @@ function App() {
         <Route path="upload" element={<Upload />} />
         <Route path="setting" element={<Setting />} />
       </Route>
+
+      <Route path="/contact">
+        <Route index element={<ContactPage />} />
+        <Route path="upload" element={<ContactConfirm />} />
+      </Route>
+
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<UserList />} />
         <Route path="contactList" element={<ContactList />} />

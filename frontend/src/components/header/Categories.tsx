@@ -3,7 +3,7 @@ import { useAtomValue } from 'jotai';
 import { categoriesByIdAtom } from '../../states/UserAtom';
 import CategoryRow from './CategoryRow';
 
-export default function CategoriesPage() {
+export default function Categories() {
   const categoriesMap = useAtomValue(categoriesByIdAtom);
 
   const categories = useMemo(() => {
@@ -27,7 +27,7 @@ export default function CategoriesPage() {
     <nav className="space-y-3" aria-label="カテゴリ ナビゲーション">
       <ul className="space-y-3">
         {categories.map((c) => (
-          <CategoryRow key={c.id} id={c.id} name={c.name} noteCount={c.noteCount} />
+          <CategoryRow key={c.id} id={c.id} name={c.name} />
         ))}
       </ul>
     </nav>

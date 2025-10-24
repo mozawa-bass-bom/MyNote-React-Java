@@ -57,7 +57,7 @@ class CategoryMapperIT {
 
     // UPDATE
     assertThat(mapper.updateName(c.getId(), "Updated")).isEqualTo(1);
-    assertThat(mapper.updatePrompts(c.getId(), "q1", "q2")).isEqualTo(1);
+    assertThat(mapper.updatePrompts(c.getUserId(),c.getId(), "q1", "q2")).isEqualTo(1);
 
     // DELETE（所有者チェックあり）
     assertThat(mapper.deleteByCategoryIdAndUser(USER_ID, c.getId())).isEqualTo(1);

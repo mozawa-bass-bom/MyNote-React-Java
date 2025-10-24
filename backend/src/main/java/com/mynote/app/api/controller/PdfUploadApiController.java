@@ -14,8 +14,10 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.mynote.app.api.dto.category.CategoryRequestDto;
+import com.mynote.app.api.dto.nav.NavTreeDto;
 import com.mynote.app.api.dto.upload.PdfUploadRequestDto;
 import com.mynote.app.api.service.category.CategoryService;
+import com.mynote.app.api.service.nav.NavService;
 import com.mynote.app.api.service.upload.ProcessStatusEvent;
 import com.mynote.app.api.service.upload.ProcessStatusEvent.Mode;
 import com.mynote.app.api.service.upload.UploadFacadeService;
@@ -33,12 +35,14 @@ public class PdfUploadApiController {
 
 	private final UploadFacadeService uploadFacadeService;
 	private final CategoryService categoryService;
+	private final NavService navService;
 	
-	@PostMapping("/notes/upload/nav")
-	public String reFreshNav() {
-		
-		
-		return "refreshed";
+	@PostMapping("/nav")
+	public NavTreeDto reFreshNav(
+			@SessionAttribute(name = "userId", required = true) Long userId) {
+		NavTreeDto navTree = navService.getNavTree(userId);
+		System.out.println("Refreshed NavTree: " + navTree);
+		return navTree;
 	}
 
 	/* =========================

@@ -12,7 +12,7 @@ type Props = {
 };
 
 export const CategorySection = memo(function CategorySection({ category, notes, isOpen, onToggle }: Props) {
-  const noteCount = category.noteCount ?? notes.length;
+  const noteCount = notes.length;
 
   return (
     <>

@@ -87,7 +87,7 @@ export const CategoryName = memo(function CategoryTitleBar({ category, noteCount
             onClick={startEdit}
             className="p-1 rounded bg-black/5"
             aria-label="編集"
-            onMouseDown={(e) => e.stopPropagation()} // ダブルクリック誤爆防止
+            onMouseDown={(e) => e.stopPropagation()}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="currentColor" />

@@ -10,7 +10,7 @@ import { useRefreshNav } from '../../states/useRefreshNav';
 const SSE_URL = new URL('/api/notes/upload/process-stream', (customAxios.defaults.baseURL ?? '') + '/').toString();
 
 type CategoryPromptsDto = {
-  categoryId: number; // ← typo修正（catedoryId -> categoryId）
+  categoryId: number;
   prompt1: string | null;
   prompt2: string | null;
 };
@@ -113,12 +113,11 @@ export default function UploadForm() {
             throw new Error(evt.message);
           }
 
-          // ★ 終端イベントでナビだけ再取得（B案）
           if (evt.code === 'COMPLETE') {
             const userId = loginUser?.userId;
             if (userId) {
               try {
-                await refreshNav({ userId, nav: true, toc: false });
+                await refreshNav({ userId });
               } catch (e) {
                 console.warn('refresh /nav failed:', e);
               }

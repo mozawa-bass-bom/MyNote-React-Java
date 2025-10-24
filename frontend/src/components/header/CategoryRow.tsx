@@ -1,5 +1,8 @@
 // src/pages/categories/CategoryRow.tsx
-import { useState, useCallback, memo } from 'react';
+import { useState, useCallback, memo, useMemo } from 'react';
+import { useAtomValue } from 'jotai';
+import { selectAtom } from 'jotai/utils';
+import { notesByCategoryIdAtom } from '../../states/UserAtom';
 import CategoryItem from './CategoryItem';
 
 function MinusIcon() {
@@ -17,19 +20,26 @@ function PlusIcon() {
     </svg>
   );
 }
-
 type Props = {
   id: number;
   name: string;
-  noteCount: number;
 };
 
-function CategoryRowImpl({ id, name, noteCount }: Props) {
+function CategoryRow({ id, name }: Props) {
   const [isOpen, setIsOpen] = useState(false);
+  const handleOpen = useCallback(() => setIsOpen((v) => !v), []);
 
-  const handleOpen = useCallback(() => {
-    setIsOpen((v) => !v);
-  }, []);
+  // ★ このカテゴリの「ノート件数」だけを購読（他カテゴリ更新では再レンダしない）
+  const countAtom = useMemo(
+    () =>
+      selectAtom(
+        notesByCategoryIdAtom,
+        (m) => m.get(id)?.length ?? 0,
+        (a, b) => a === b // 件数が変わらない限り再レンダしない
+      ),
+    [id]
+  );
+  const noteCount = useAtomValue(countAtom);
 
   return (
     <li className="space-y-1">
@@ -47,20 +57,14 @@ function CategoryRowImpl({ id, name, noteCount }: Props) {
           <span className="inline-flex h-5 w-5 items-center justify-center">
             {isOpen ? <MinusIcon /> : <PlusIcon />}
           </span>
-
           <span className="font-semibold leading-none">{name}</span>
-
-          <span className="ml-1 inline-flex items-center rounded bg-white px-1.5 py-0.5 text-xs leading-none">
-            {noteCount}
-          </span>
+          <span className="px-1.5 py-0.5 text-xs">({noteCount})</span>
         </h2>
       </div>
 
-      {/* 子はノート一覧 */}
       <CategoryItem categoryId={id} isOpen={isOpen} />
     </li>
   );
 }
 
-const CategoryRow = memo(CategoryRowImpl);
-export default CategoryRow;
+export default memo(CategoryRow);

@@ -5,7 +5,7 @@ import type { TocItem } from '../types/base';
 export function normalizeTocMap(resp: ApiTocMapResponse): Map<number, TocItem[]> {
   const out = new Map<number, TocItem[]>();
   for (const key of Object.keys(resp)) {
-    const noteId = Number(key); // JSONのキーは文字列
+    const noteId = Number(key);
     const items = (resp[key] ?? []).map((t) => ({
       id: t.id,
       indexNumber: t.indexNumber,

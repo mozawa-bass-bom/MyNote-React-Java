@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import CategoriesPage from './Categories';
+import Categories from './Categories';
 import LogoutButton from '../ui/LogoutButton';
 
 export default function UserNavi() {
@@ -38,7 +38,7 @@ export default function UserNavi() {
           <h2 className="px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">カテゴリ</h2>
         </div>
         <div className="mx-3 mb-3 flex-1 overflow-y-auto rounded-lg ">
-          <CategoriesPage />
+          <Categories />
         </div>
 
         {/* フッター（下に固定させるために mt-auto） */}

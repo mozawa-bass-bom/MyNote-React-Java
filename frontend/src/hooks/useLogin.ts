@@ -11,7 +11,7 @@ import {
 } from '../states/UserAtom';
 import type { RawLoginResponse } from '../types/loginUser';
 import { normalizeLoginResponse } from '../helpers/normalizeLogin';
-import { normalizeTocMap } from '../helpers/nomalizeToc';
+import { normalizeTocMap } from '../helpers/normalizeToc';
 import type { ApiTocMapResponse } from '../types/base';
 import { useNavigate } from 'react-router-dom';
 
@@ -52,14 +52,13 @@ export default function useLogin() {
 
     try {
       const raw = await apiLogin(loginId, loginPass);
-      const { loginUser, categoriesById, notesByCategoryId, role } = normalizeLoginResponse(raw);
+      const { loginUser, categoriesByIdMap, notesByCategoryIdMap, role } = normalizeLoginResponse(raw);
 
       setRole(role);
-      setCategoriesById(new Map(categoriesById)); // Map<number, Category>
-      setNotesByCategoryId(new Map(notesByCategoryId)); // Map<number, NoteSummary[]>
+      setCategoriesById(new Map(categoriesByIdMap)); // Map<number, Category>
+      setNotesByCategoryId(new Map(notesByCategoryIdMap)); // Map<number, NoteSummary[]>
       setLoginUser(loginUser);
 
-      // 2) 目次マップのプリロード（失敗しても致命ではない）
       try {
         const tocResp = await apiFetchTocMap();
         setTocByNoteId(normalizeTocMap(tocResp)); // Map<number, Toc[]>
