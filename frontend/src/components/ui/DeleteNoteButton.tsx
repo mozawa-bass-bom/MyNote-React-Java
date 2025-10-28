@@ -58,20 +58,7 @@ export default function DeleteNoteButton({ userSeqNo, noteId }: Props) {
   };
 
   return (
-    <button
-      onClick={handleDeleteNote}
-      disabled={pending}
-      className="
-    inline-flex items-center gap-1
-    rounded-md border border-2 border-red-200
-    px-2 py-1 text-sm font-medium text-gray-700
-    hover:bg-red-100 hover:border-red-400 hover:text-red-800
-    active:bg-red-200
-    focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300
-    disabled:opacity-50 disabled:cursor-not-allowed
-    transition-colors
-  "
-    >
+    <button onClick={handleDeleteNote} disabled={pending} className="btn btn-danger">
       削除
     </button>
   );

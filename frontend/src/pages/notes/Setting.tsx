@@ -14,7 +14,7 @@ export default function Setting() {
         </div>
         <div className="p-4">
           <Link to="/contact">
-            <button>お問い合わせ</button>
+            <button className="btn btn-primary">お問い合わせ</button>
           </Link>
         </div>
       </section>

@@ -1,3 +1,3 @@
 export default function DelateAccountButton() {
-  return <div>DelateAccountButton</div>;
+  return <button className="btn btn-danger">DelateAccountButton</button>;
 }

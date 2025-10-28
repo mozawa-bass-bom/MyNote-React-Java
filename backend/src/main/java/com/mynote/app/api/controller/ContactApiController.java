@@ -28,7 +28,8 @@ public class ContactApiController {
 	 * をフロントから受け取る
 	 * */
 	@PostMapping()
-	public ResponseEntity<ApiResponse<Void>> createContact(@SessionAttribute("userId") Long userId,
+	public ResponseEntity<ApiResponse<Void>> createContact(
+			@SessionAttribute(name = "userId", required = false) Long userId,
 		@RequestBody ContactRequestDto requestDto) {
 		contactService.createContact(userId, requestDto);
 		return ResponseEntity.ok(ApiResponse.ok(null));

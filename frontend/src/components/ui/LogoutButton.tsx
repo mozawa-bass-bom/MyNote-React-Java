@@ -10,7 +10,7 @@ export default function LogoutButton() {
   const resetAll = useSetAtom(resetAllUserStateAtom);
 
   const handleLogout = async () => {
-    await getOk('api/auth/logout').catch(() => {});
+    await getOk('auth/logout').catch(() => {});
     resetAll();
 
     // 必要なら他の外部状態もここでクリア（例：Service Worker キャッシュ等）

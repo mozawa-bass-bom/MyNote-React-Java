@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import type { NoteDetailResponse } from '../../types/base';
-import Editor from './Editor';
+import Editor from './Editor/Editor';
 
 type PageItem = NoteDetailResponse['pageItems'][number];
 type Props = { p: PageItem };

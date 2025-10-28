@@ -1,8 +1,5 @@
 package com.mynote.app.api.service.contact;
 
-// 💡 static importを追加
-import static java.time.LocalDateTime.*;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,23 +14,26 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class ContactService {
-
+	
+	private static final Long GUEST_USER_ID = 999999L;
+	
 	private final ContactMapper contactMapper;
     /**
      * 問い合わせ情報を登録する。
-     * * @param userId セッションから取得したユーザーID
+     * * @param userId セッションから取得したユーザーID (null許容)
      * @param requestDto フォームからのリクエストデータ
      */
     @Transactional 
-	public void createContact(Long userId, ContactRequestDto requestDto) {
-        log.info("Creating contact for user ID: {}", userId);
+	public void createContact(Long userId, ContactRequestDto requestDto) { 
+
+    	Long actualUserId = (userId != null) ? userId : GUEST_USER_ID;
         
 		Contact contact = new Contact();
-		contact.setUserId(userId);
+
+		contact.setUserId(actualUserId); 
 		contact.setName(requestDto.getName());
 		contact.setEmail(requestDto.getEmail());
 		contact.setMessage(requestDto.getMessage());
-		contact.setCreatedAt(now()); 
 		
         log.debug("Contact entity created: {}", contact);
         

@@ -18,7 +18,7 @@ import {
 } from '@mdxeditor/editor';
 import type { MDXEditorMethods } from '@mdxeditor/editor';
 import '@mdxeditor/editor/style.css';
-import { patchOk } from '../../helpers/CustomAxios';
+import { patchOk } from '../../../helpers/CustomAxios';
 import axios, { AxiosError } from 'axios';
 
 type Props = {

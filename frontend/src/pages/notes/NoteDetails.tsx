@@ -67,10 +67,16 @@ export default function NoteDetails() {
 
   return (
     <div className="mx-auto px-4 py-4 font-sans">
-      <NoteHeader title={detail.title} description={detail.description} />
+      <NoteHeader
+        title={detail.title}
+        userSeqNo={detail.userSeqNo}
+        id={detail.id}
+        categoryId={detail.categoryId}
+        description={detail.description}
+      />
 
       <div className="mt-4 grid gap-4 md:grid-cols-3">
-        <TocCard items={detail.tocItems} />
+        <TocCard noteId={detail.id} items={detail.tocItems} />
         <MetaCard detail={detail} />
       </div>
 

@@ -11,7 +11,6 @@ export default function ContactIndex() {
   const [mode, setMode] = useState<Mode>('edit');
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const [form, setForm] = useState<FormData>({ name: '', email: '', message: '' });
 
   const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
@@ -23,7 +22,7 @@ export default function ContactIndex() {
   const toConfirm = useCallback(
     (next: FormData) => {
       setForm(next);
-      if (!isValid) return; // ここで再チェックするなら next ベースで判定してもOK
+      if (!isValid) return;
       setError(null);
       setMode('confirm');
     },
@@ -36,7 +35,7 @@ export default function ContactIndex() {
     setIsPending(true);
     setError(null);
     try {
-      await customAxios.post('/api/contacts', {
+      await customAxios.post('/contacts', {
         name: form.name.trim(),
         email: form.email.trim(),
         message: form.message.trim(),
@@ -55,7 +54,7 @@ export default function ContactIndex() {
     <div className="p-4 space-y-4">
       <h1 className="text-xl font-semibold">お問い合わせ</h1>
 
-      {mode === 'edit' && <ContactForm defaultValue={form} onConfirm={toConfirm} isPending={isPending} error={error} />}
+      {mode === 'edit' && <ContactForm onConfirm={toConfirm} isPending={isPending} error={error} />}
 
       {mode === 'confirm' && (
         <ConfirmTable

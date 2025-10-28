@@ -3,6 +3,7 @@ import { memo } from 'react';
 import type { Category, NoteSummary } from '../../types/base';
 import { CategoryName } from './CategoryName';
 import { NoteRow } from './NoteRow';
+import DeleteCategoryButton from '../ui/DeleteCategoryBotton';
 
 type Props = {
   category: Category;
@@ -24,6 +25,9 @@ export const CategorySection = memo(function CategorySection({ category, notes, 
           </button>
 
           <CategoryName category={category} noteCount={noteCount} />
+        </div>
+        <div>
+          <DeleteCategoryButton categoryId={category.id} />
         </div>
       </div>
 
