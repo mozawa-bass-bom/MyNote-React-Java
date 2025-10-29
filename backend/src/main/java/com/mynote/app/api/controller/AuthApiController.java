@@ -7,10 +7,12 @@ import jakarta.servlet.http.HttpSession;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mynote.app.api.dto.ApiResponse;
@@ -85,11 +87,12 @@ public class AuthApiController {
 		    // 少なくともどちらか必須
 		    if ((userName == null || userName.isEmpty()) && (email == null || email.isEmpty())) {
 		        return ResponseEntity.badRequest().body(
-		            com.mynote.app.api.dto.ApiResponse.failWithErrors("at_least_one_of_userName_or_email_is_required", null)
+		       ApiResponse.failWithErrors("at_least_one_of_userName_or_email_is_required", null)
 		        );
 		    }
 
 		    var result = new LinkedHashMap<String, Boolean>(2);
+		    
 		    if (userName != null && !userName.isEmpty()) {
 		        result.put("userNameAvailable", authService.isUserNameAvailable(userName));
 		    }
@@ -100,7 +103,29 @@ public class AuthApiController {
 		    return ResponseEntity.ok(ApiResponse.ok(result));
 	    }
 	 
-	 
+	 @GetMapping("/availability/username")
+	 public ResponseEntity<ApiResponse<Map<String, Boolean>>> availabilityUserName(
+	         @RequestParam("value") String value) {
+	     final String userName = value == null ? null : value.trim();
+	     boolean ok = (userName != null && !userName.isEmpty())
+	             ? authService.isUserNameAvailable(userName)
+	             : false;
+	     return ResponseEntity.ok(
+	         ApiResponse.ok(Map.of("userNameAvailable", ok))
+	     );
+	 }
+
+	 @GetMapping("/availability/email")
+	 public ResponseEntity<ApiResponse<Map<String, Boolean>>> availabilityEmail(
+	         @RequestParam("value") String value) {
+	     final String email = value == null ? null : value.trim().toLowerCase();
+	     boolean ok = (email != null && !email.isEmpty())
+	             ? authService.isEmailAvailable(email)
+	             : false;
+	     return ResponseEntity.ok(
+	         ApiResponse.ok(Map.of("emailAvailable", ok))
+	     );
+	 }
 	 
 	@PostMapping("/register")
 	public ResponseEntity<String> register(@RequestBody RegisterUser newUser) {
@@ -112,6 +137,22 @@ public class AuthApiController {
 		}
 	}
 
+	@DeleteMapping("/deleteUser")
+	public ResponseEntity<String> deleteUser() {
+		Long userId = (Long) session.getAttribute("userId");
+		if (userId == null) {
+			return new ResponseEntity<>("No user logged in", HttpStatus.UNAUTHORIZED);
+		}
+
+		boolean deleted = authService.deleteUser(userId);
+		if (deleted) {
+			session.invalidate();
+			return new ResponseEntity<>("User deleted successfully", HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>("User deletion failed", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+	
 	@GetMapping("/logout")
 	public ResponseEntity<String> logout() {
 		session.invalidate();

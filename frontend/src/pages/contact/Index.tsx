@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import customAxios from '../../helpers/CustomAxios';
 import ContactForm from '../../components/contact/ContactForm';
 import ConfirmTable from '../../components/contact/ConfirmTable';
+import { Link } from 'react-router-dom';
 
 type Mode = 'edit' | 'confirm' | 'done';
 type FormData = { name: string; email: string; message: string };
@@ -51,30 +52,35 @@ export default function ContactIndex() {
   }, [form, isValid]);
 
   return (
-    <div className="p-4 space-y-4">
-      <h1 className="text-xl font-semibold">お問い合わせ</h1>
+    <div className="min-h-dvh flex flex-col justify-center items-center gap-2 w-full max-w-md mx-auto">
+      <div className="w-full">
+        <h1 className="text-xl font-semibold mb-4">お問い合わせ</h1>
 
-      {mode === 'edit' && <ContactForm onConfirm={toConfirm} isPending={isPending} error={error} />}
+        {mode === 'edit' && <ContactForm onConfirm={toConfirm} isPending={isPending} error={error} />}
 
-      {mode === 'confirm' && (
-        <ConfirmTable
-          name={form.name}
-          email={form.email}
-          message={form.message}
-          isPending={isPending}
-          onBack={backToEdit}
-          onSubmit={submit}
-        />
-      )}
+        {mode === 'confirm' && (
+          <ConfirmTable
+            name={form.name}
+            email={form.email}
+            message={form.message}
+            isPending={isPending}
+            onBack={backToEdit}
+            onSubmit={submit}
+          />
+        )}
 
-      {mode === 'done' && (
-        <div className="rounded border bg-green-50 p-4">
-          <div className="font-medium">送信しました。ご連絡ありがとうございます！</div>
-          <div className="text-sm text-gray-600 mt-1">内容を確認のうえ、必要に応じてご返信します。</div>
-        </div>
-      )}
+        {mode === 'done' && (
+          <div>
+            <div className="rounded border bg-green-50 p-4">
+              <div className="font-medium">送信しました。ご連絡ありがとうございます！</div>
+              <div className="text-sm text-gray-600 mt-1">内容を確認のうえ、必要に応じてご返信します。</div>
+            </div>
+            <Link to="/notes">戻る</Link>
+          </div>
+        )}
 
-      {error && mode !== 'done' && <div className="text-sm text-red-700">{error}</div>}
+        {error && mode !== 'done' && <div className="text-sm text-red-700">{error}</div>}
+      </div>
     </div>
   );
 }

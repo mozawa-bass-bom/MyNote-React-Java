@@ -53,6 +53,10 @@ public interface UserMapper {
      * user_name の重複存在チェック
      */
     boolean existsByUserName(@Param("userName") String userName);
+    /**
+     * email の重複存在チェック
+     */
+    boolean existsByUserEmail(@Param("email") String email);
 
     /**
      * 集計取得：ユーザー毎のカテゴリ数・ノート数・問い合わせ数などを一括で返す

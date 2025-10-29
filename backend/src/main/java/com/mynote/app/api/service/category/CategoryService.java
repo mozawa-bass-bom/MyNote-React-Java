@@ -172,7 +172,7 @@ public class CategoryService {
      log.debug("CategoryService.delete userId={}, id={}", userId, id);
      int rows = categoryMapper.deleteByCategoryIdAndUser(userId, id);
      if (rows == 0) {
-         // 別実装でもOK：NotFound系のアプリ例外を投げる
+      
          throw new IllegalArgumentException("Category not found or not owned by user.");
      }
      // ここでDBのFKに ON DELETE CASCADE を設定しておけば

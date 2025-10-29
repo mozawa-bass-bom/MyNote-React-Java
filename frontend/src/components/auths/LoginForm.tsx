@@ -1,6 +1,6 @@
 // src/pages/auth/LoginForm.tsx
 import { useRef, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import useLogin from '../../hooks/useLogin';
 
 export default function LoginForm() {
@@ -24,9 +24,9 @@ export default function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 w-m max-w-m">
+    <form onSubmit={handleSubmit} className="w-full">
       <div>
-        <label className="block text-m mb-1">
+        <label className="block text-m mb-2">
           ログイン ID
           <input
             type="text"
@@ -37,8 +37,8 @@ export default function LoginForm() {
           />
         </label>
       </div>
-      <div>
-        <label className="block text-m mb-1">
+      <div className=" mb-4">
+        <label className="block text-m">
           パスワード
           <input
             type="password"
@@ -56,17 +56,14 @@ export default function LoginForm() {
         </p>
       )}
 
-      <div className="flex items-center gap-2">
+      <div className="w-full">
         <button
           type="submit"
-          className="px-3 py-1.5 rounded bg-black text-white disabled:opacity-50"
+          className="px-3 flex w-full items-center justify-center py-1.5 rounded bg-black text-white disabled:opacity-50"
           disabled={isPending}
         >
           {isPending ? 'ログイン中…' : 'ログイン'}
         </button>
-        <Link to="/resetPass" className="px-3 py-1.5 rounded border inline-block text-sm">
-          パスワードリセット
-        </Link>
       </div>
     </form>
   );

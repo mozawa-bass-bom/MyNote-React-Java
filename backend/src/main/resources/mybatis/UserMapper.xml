@@ -53,11 +53,18 @@
 		u.user_name = #{userName}
 	</select>
 
-	<!-- 新規作成時の重複チェック -->
+	<!-- 新規作成時のuserName重複チェック -->
 	<select id="existsByUserName" parameterType="string"
 		resultType="boolean">
 		SELECT EXISTS(SELECT 1 FROM users WHERE user_name =
 		#{userName})
+	</select>
+	
+	<!-- 新規作成時のemail重複チェック -->
+	<select id="existsByUserEmail" parameterType="string"
+		resultType="boolean">
+		SELECT EXISTS(SELECT 1 FROM users WHERE email =
+		#{email})
 	</select>
 	
 	<!--ユーザー毎の使用カテゴリとノート数取得 -->
