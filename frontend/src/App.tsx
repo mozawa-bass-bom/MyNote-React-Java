@@ -9,7 +9,7 @@ import UserList from './pages/admin/UserList';
 import ContactList from './pages/admin/ContactList';
 import PageNotFound from './pages/PageNotFound';
 import ContactPage from './pages/contact/Index';
-import Register from './components/auths/RegisterForm';
+import Register from './pages/auth/Register';
 
 import UserLayout from './pages/layouts/UserLayout';
 import AdminLayout from './pages/layouts/AdminLayout';
