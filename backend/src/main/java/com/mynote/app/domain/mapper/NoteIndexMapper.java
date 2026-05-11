@@ -58,5 +58,26 @@ public interface NoteIndexMapper {
      */
     List<NoteIndex> findByNoteId(@Param("noteId") Long noteId);
     
-   long findNoteIdById(@Param("id") Long tocId);
+    /**
+     * 指定した複数のノートに紐づくすべての目次を取得する。（N+1対策用）
+     * @param noteIds ノートIDのリスト
+     * @return 目次リスト
+     */
+    List<NoteIndex> findByNoteIds(@Param("noteIds") List<Long> noteIds);
+
+    long findNoteIdById(@Param("id") Long tocId);
+
+    /**
+     * 指定ノートに紐づく目次をすべて削除する（AI再インジェスト時の差し替えに使用）。
+     * @param noteId ノートID
+     * @return 削除件数
+     */
+    int deleteByNoteId(@Param("noteId") Long noteId);
+
+    /**
+     * 目次を一括登録する（バルクINSERT）。
+     * @param list 登録対象リスト
+     * @return 登録件数
+     */
+    int insertBatch(@Param("list") List<NoteIndex> list);
 }

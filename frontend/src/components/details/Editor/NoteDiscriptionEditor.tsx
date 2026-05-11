@@ -1,7 +1,9 @@
-// src/components/editor/TocBodyEditor.tsx
+// src/components/editor/NoteDiscriptionEditor.tsx
 import { useCallback } from 'react';
+import { useSetAtom } from 'jotai';
 import SimpleEditor from './SimpleEditor';
 import { patchOk } from '../../../helpers/CustomAxios';
+import { addToastAtom } from '../../../states/ToastAtom';
 
 type Props = {
   userSeqNo: number;
@@ -9,6 +11,8 @@ type Props = {
 };
 
 export default function NoteDiscriptionEditor({ userSeqNo, initialDiscription }: Props) {
+  const addToast = useSetAtom(addToastAtom);
+
   const saveRequest = useCallback(
     async (description: string) => {
       await patchOk(`/notes/${userSeqNo}/description`, { description });
@@ -16,5 +20,20 @@ export default function NoteDiscriptionEditor({ userSeqNo, initialDiscription }:
     [userSeqNo]
   );
 
-  return <SimpleEditor initialValue={initialDiscription} saveRequest={saveRequest} />;
+  const onSaved = useCallback(() => {
+    addToast({ type: 'success', message: '概要を保存しました' });
+  }, [addToast]);
+
+  const onError = useCallback(() => {
+    addToast({ type: 'error', message: '概要の保存に失敗しました' });
+  }, [addToast]);
+
+  return (
+    <SimpleEditor
+      initialValue={initialDiscription}
+      saveRequest={saveRequest}
+      onSaved={onSaved}
+      onError={onError}
+    />
+  );
 }

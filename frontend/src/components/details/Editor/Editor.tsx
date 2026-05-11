@@ -20,6 +20,8 @@ import type { MDXEditorMethods } from '@mdxeditor/editor';
 import '@mdxeditor/editor/style.css';
 import { patchOk } from '../../../helpers/CustomAxios';
 import axios, { AxiosError } from 'axios';
+import { useSetAtom } from 'jotai';
+import { addToastAtom } from '../../../states/ToastAtom';
 
 type Props = {
   pageId: number; // APIアクセスのため必須
@@ -30,6 +32,7 @@ type Props = {
 type ApiResponse<T> = { ok: boolean; message?: string; data?: T; errors?: unknown };
 
 export default function Editor({ pageId, markdown, readOnly = false }: Props) {
+  const addToast = useSetAtom(addToastAtom);
   const editorRef = useRef<MDXEditorMethods | null>(null);
   const lastSavedRef = useRef(markdown); // 直近サーバ反映済みの文字列
   const [saving, setSaving] = useState(false);
@@ -74,16 +77,17 @@ export default function Editor({ pageId, markdown, readOnly = false }: Props) {
 
     try {
       setSaving(true);
-      await patchOk<ApiResponse<void>>(`notes/pages/${pageId}/text`, { extractedText: md });
-      lastSavedRef.current = md;
-      // toast.success('保存しました');
+      const mdToSave = md.trimEnd();
+      await patchOk<ApiResponse<void>>(`notes/pages/${pageId}/text`, { extractedText: mdToSave });
+      lastSavedRef.current = mdToSave;
+      addToast({ type: 'success', message: '保存しました' });
     } catch (e: unknown) {
       if (axios.isCancel?.(e)) return;
       const ax = axios.isAxiosError?.(e) ? (e as AxiosError<ApiResponse<void>>) : null;
       const status = ax?.response?.status ?? 'no-status';
       const msg = ax?.response?.data?.message ?? ax?.message ?? 'unknown error';
       console.error('updatePageText failed:', status, msg, e);
-      // toast.error(`保存に失敗しました（${status}）`);
+      addToast({ type: 'error', message: `保存に失敗しました（${status}）` });
     } finally {
       setSaving(false);
     }
@@ -106,9 +110,13 @@ export default function Editor({ pageId, markdown, readOnly = false }: Props) {
         ].join(' ')}
         contentEditableClassName={[
           // 編集領域：親の残り高さを占有しつつ、内容は中スクロール
-          'prose max-w-none p-2 rounded-md h-full min-h-0 overflow-auto',
+          'prose dark:prose-invert max-w-none p-2 rounded-md h-full min-h-0 overflow-auto',
           'border',
-          saving ? 'border-blue-300 ring-2 ring-blue-100' : 'border-gray-200',
+          saving ? 'border-ring ring-2 ring-ring/20' : 'border-border',
+          'dark:text-foreground',
+          // リスト記号・番号をテーマカラーに追従させる
+          'dark:[&_li::marker]:text-foreground dark:[&_li]:text-foreground',
+          'dark:[&_ul]:text-foreground dark:[&_ol]:text-foreground',
         ].join(' ')}
         plugins={plugins}
       />

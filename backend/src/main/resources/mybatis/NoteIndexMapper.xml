@@ -35,7 +35,31 @@
     SELECT * FROM note_index WHERE note_id = #{noteId} ORDER BY index_number ASC
   </select>
 
+  <select id="findByNoteIds" resultMap="NoteIndexMap">
+    SELECT * FROM note_index
+    WHERE note_id IN
+    <foreach item="item" index="index" collection="noteIds" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+    ORDER BY note_id ASC, index_number ASC
+  </select>
+
 <select id="findNoteIdById" resultType="long">
     SELECT note_id FROM note_index WHERE id = #{id}
   </select>
+
+  <!-- AI再インジェスト時：ノートの全目次を一括削除 -->
+  <delete id="deleteByNoteId">
+    DELETE FROM note_index WHERE note_id = #{noteId}
+  </delete>
+
+  <!-- バルクINSERT（AIインジェスト結果の目次一括登録） -->
+  <insert id="insertBatch" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO note_index (note_id, index_number, start_index, end_index, title, body)
+    VALUES
+    <foreach collection="list" item="idx" separator=",">
+      (#{idx.noteId}, #{idx.indexNumber}, #{idx.startIndex}, #{idx.endIndex}, #{idx.title}, #{idx.body})
+    </foreach>
+  </insert>
+
 </mapper>

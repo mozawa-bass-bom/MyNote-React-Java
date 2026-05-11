@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.SessionAttribute;
+import org.springframework.web.bind.annotation.RequestAttribute;
 
 import com.mynote.app.api.dto.ApiResponse;
 import com.mynote.app.api.dto.category.CategoryPatchRequestDto;
@@ -36,7 +36,7 @@ public class CategoryApiController {
 
 	@PostMapping("/create")
 	public ResponseEntity<ApiResponse<Void>> create(
-			@SessionAttribute("userId") Long userId,
+			@RequestAttribute("userId") Long userId,
 			@RequestBody CategoryRequestDto categoryRequestDto) {
 		log.info("[POST] create: userId={}", userId);
 
@@ -55,7 +55,7 @@ public class CategoryApiController {
 	// ユーザーに紐ずいた全件取得
 	@GetMapping("")
 	public ResponseEntity<ApiResponse<Object>> getAll(
-			@SessionAttribute("userId") Long userId) {
+			@RequestAttribute("userId") Long userId) {
 		log.info("[GET] getAll: userId={}", userId);
 
 		var categories = categoryService.getAll(userId);
@@ -69,10 +69,11 @@ public class CategoryApiController {
 	/** プロンプト取得 */
 	@GetMapping("/{id}/prompts")
 	public ResponseEntity<ApiResponse<CategoryPromptResponseDto>> getPrompts(
-			@PathVariable Long id) {
-		log.info("[GET] getPrompts: id={}", id);
+			@PathVariable Long id,
+			@RequestAttribute("userId") Long userId) {
+		log.info("[GET] getPrompts: id={}, userId={}", id, userId);
 
-		CategoryPromptResponseDto dto = categoryService.getPrompts(id);
+		CategoryPromptResponseDto dto = categoryService.getPrompts(userId, id);
 
 		if (dto == null) {
 			log.warn("Category not found or forbidden: id={}", id);
@@ -93,10 +94,11 @@ public class CategoryApiController {
 	/** カテゴリ名更新 */
 	@PatchMapping("/{id}")
 	public ResponseEntity<ApiResponse<Void>> updateName(@PathVariable Long id,
-			@RequestBody CategoryPatchRequestDto req) {
-		log.info("[PATCH] updateName: id={}, request={}", id, req);
+			@RequestBody CategoryPatchRequestDto req,
+			@RequestAttribute("userId") Long userId) {
+		log.info("[PATCH] updateName: id={}, userId={}, request={}", id, userId, req);
 
-		int updatedCount = categoryService.updateName(id, req.getName());
+		int updatedCount = categoryService.updateName(userId, id, req.getName());
 		log.debug("updateName result: updatedCount={}", updatedCount);
 
 		if (updatedCount == 0) {
@@ -119,7 +121,7 @@ public class CategoryApiController {
 @DeleteMapping("/{id}")
 public ResponseEntity<Void> delete(
     @PathVariable Long id,
-    @SessionAttribute("userId") Long userId
+    @RequestAttribute("userId") Long userId
 ) {
     log.info("[DELETE] delete: id={}, userId={}", id, userId);
 

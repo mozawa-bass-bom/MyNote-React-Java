@@ -1,6 +1,8 @@
 // src/pages/notes/NoteTitle.tsx
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useSetAtom } from 'jotai';
+import { addToastAtom } from '../../states/ToastAtom';
 import useUpdateNoteTitle from '../../hooks/useUpdateNoteTitle';
 
 type NoteTitleProps = {
@@ -10,6 +12,7 @@ type NoteTitleProps = {
 };
 
 export const NoteTitle = memo(function NoteTitle({ title, categoryId, userSeqNo }: NoteTitleProps) {
+  const addToast = useSetAtom(addToastAtom);
   const { updateNoteTitle, isPending } = useUpdateNoteTitle();
   const [isEdit, setIsEdit] = useState(false);
   const [draft, setDraft] = useState(title);
@@ -29,8 +32,12 @@ export const NoteTitle = memo(function NoteTitle({ title, categoryId, userSeqNo 
       const next = draft.trim();
       if (!next || next === title) return setIsEdit(false);
       const ok = await updateNoteTitle({ categoryId, userSeqNo }, next);
-      if (ok) setIsEdit(false);
-      // 失敗時はhook側でロールバック済み。ここでtoastなど
+      if (ok) {
+        setIsEdit(false);
+        addToast({ type: 'success', message: 'タイトルを更新しました' });
+      } else {
+        addToast({ type: 'error', message: 'タイトルの更新に失敗しました' });
+      }
     },
     [draft, title, categoryId, userSeqNo, updateNoteTitle]
   );
@@ -63,13 +70,13 @@ export const NoteTitle = memo(function NoteTitle({ title, categoryId, userSeqNo 
             onKeyDown={onKeyDown}
             disabled={isPending}
             aria-label="ノートタイトルを編集"
-            className="px-1.5 py-0.5 rounded border text-sm bg-white min-w-0"
+            className="px-1.5 py-0.5 rounded border text-sm bg-background min-w-0"
           />
           <button
             type="button"
             onClick={confirmEdit}
             disabled={isPending}
-            className="rounded px-2 py-0.5 text-xs bg-black/80 text-white hover:opacity-90 disabled:opacity-50"
+            className="rounded px-2 py-0.5 text-xs bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
           >
             {isPending ? '保存中…' : '確定'}
           </button>
@@ -93,7 +100,7 @@ export const NoteTitle = memo(function NoteTitle({ title, categoryId, userSeqNo 
           <button
             type="button"
             onClick={startEdit}
-            className="p-1 rounded bg-black/5"
+            className="p-1 rounded hover:bg-muted"
             aria-label="ノートタイトルを編集"
             onMouseDown={(e) => e.stopPropagation()}
           >

@@ -1,4 +1,4 @@
-// src/components/editor/UltraSimpleEditor.tsx
+// src/components/editor/SimpleEditor.tsx
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   MDXEditor,
@@ -16,26 +16,33 @@ import '@mdxeditor/editor/style.css';
 type Props = {
   initialValue: string;
   readOnly?: boolean;
-  debounceMs?: number;
   saveRequest: (markdown: string) => Promise<void>;
   onSavingChange?: (saving: boolean) => void;
   onSaved?: (value: string) => void;
   onError?: (message: string, error: unknown) => void;
 };
 
-export default function UltraSimpleEditor({
+export default function SimpleEditor({
   initialValue,
   readOnly = false,
-  debounceMs = 800,
   saveRequest,
   onSavingChange,
   onSaved,
   onError,
 }: Props) {
   const editorRef = useRef<MDXEditorMethods | null>(null);
-  const [value, setValue] = useState(initialValue);
   const [saving, setSaving] = useState(false);
-  const timerRef = useRef<number | null>(null);
+  const lastSavedRef = useRef(initialValue.trimEnd()); // 直近サーバ反映済みの文字列
+
+  // コールバックを ref で保持して stale closure を防ぐ
+  const saveRequestRef = useRef(saveRequest);
+  useEffect(() => { saveRequestRef.current = saveRequest; }, [saveRequest]);
+
+  const onSavedRef = useRef(onSaved);
+  useEffect(() => { onSavedRef.current = onSaved; }, [onSaved]);
+
+  const onErrorRef = useRef(onError);
+  useEffect(() => { onErrorRef.current = onError; }, [onError]);
 
   const plugins = useMemo(
     () => [
@@ -50,81 +57,66 @@ export default function UltraSimpleEditor({
     []
   );
 
+  // initialValue が変化したときエディタ内容を同期
+  const prevInitialRef = useRef(initialValue);
   useEffect(() => {
-    return () => {
-      if (timerRef.current) window.clearTimeout(timerRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    setValue(initialValue);
+    if (prevInitialRef.current !== initialValue) {
+      prevInitialRef.current = initialValue;
+      const trimmedInitial = initialValue.trimEnd();
+      lastSavedRef.current = trimmedInitial;
+      editorRef.current?.setMarkdown(trimmedInitial);
+    }
   }, [initialValue]);
 
   useEffect(() => {
     onSavingChange?.(saving);
   }, [saving, onSavingChange]);
 
-  const doSave = useCallback(
-    async (md: string) => {
-      setSaving(true);
-      try {
-        await saveRequest(md);
-        console.log('[UltraSimpleEditor] doSave success');
-        onSaved?.(md);
-      } catch (e) {
-        console.log('[UltraSimpleEditor] doSave error', e);
-        onError?.('保存に失敗しました', e);
-      } finally {
-        setSaving(false);
-      }
-    },
-    [saveRequest, onSaved, onError]
-  );
+  // フォーカスが外れたときだけ保存（Editor.tsx と同じ方式）
+  const handleBlur = useCallback(async () => {
+    if (readOnly) return;
+    const md = editorRef.current?.getMarkdown();
+    if (typeof md !== 'string') return;
 
-  const scheduleSave = useCallback(
-    (md: string) => {
-      if (readOnly) return;
-      if (timerRef.current) {
-        window.clearTimeout(timerRef.current);
-        console.log('[UltraSimpleEditor] cleared previous timer');
-      }
-      timerRef.current = window.setTimeout(() => {
-        console.log('[UltraSimpleEditor] timer fired -> doSave');
-        doSave(md);
-        timerRef.current = null;
-      }, debounceMs);
-    },
-    [debounceMs, doSave, readOnly]
-  );
+    const trimmed = md.trim();
+    const prev = lastSavedRef.current.trim();
+    if (trimmed === prev) return; // 変更なし → スキップ
 
-  const handleChange = useCallback(
-    (md: string) => {
-      setValue(md);
-      console.log('[UltraSimpleEditor] onChange len=', md?.length ?? 0);
-      scheduleSave(md);
-    },
-    [scheduleSave]
-  );
+    setSaving(true);
+    try {
+      const mdToSave = md.trimEnd();
+      await saveRequestRef.current(mdToSave);
+      lastSavedRef.current = mdToSave;
+      onSavedRef.current?.(mdToSave);
+    } catch (e) {
+      onErrorRef.current?.('保存に失敗しました', e);
+    } finally {
+      setSaving(false);
+    }
+  }, [readOnly]);
 
   return (
     <div
       className={[
         'h-full min-h-0',
         'rounded-md border border-transparent',
-        'focus-within:border-gray-300 focus-within:ring-1 focus-within:ring-gray-200',
-        saving ? 'ring-2 ring-blue-100' : '',
+        'focus-within:border-border focus-within:ring-1 focus-within:ring-border',
+        saving ? 'ring-2 ring-ring/20' : '',
         'transition-colors',
       ].join(' ')}
     >
       <MDXEditor
         ref={editorRef}
-        markdown={value}
+        markdown={initialValue.trimEnd()}
         readOnly={readOnly}
-        onChange={handleChange}
+        onBlur={handleBlur}
         className="h-full flex flex-col"
         contentEditableClassName={[
-          'prose max-w-none rounded-md h-full min-h-0 overflow-auto !py-0 !px-2',
+          'prose dark:prose-invert max-w-none rounded-md h-full min-h-0 overflow-auto !py-0 !px-2',
           'outline-none focus:outline-none',
+          'dark:text-foreground',
+          'dark:[&_li::marker]:text-foreground dark:[&_li]:text-foreground',
+          'dark:[&_ul]:text-foreground dark:[&_ol]:text-foreground',
         ].join(' ')}
         plugins={plugins}
       />

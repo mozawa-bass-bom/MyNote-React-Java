@@ -1,41 +1,69 @@
 // src/hooks/useUpdateCategoryName.ts
-import { useCallback, useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import customAxios from '../helpers/CustomAxios';
-import { useAtom } from 'jotai';
-import { categoriesByIdAtom } from '../states/UserAtom';
-import type { Category } from '../types/base';
+import { useAtomValue } from 'jotai';
+import { loginUserAtom } from '../states/UserAtom';
+import type { Category, NoteSummary } from '../types/base';
+
+type UpdateCategoryPrams = {
+  categoryId: number;
+  newName: string;
+};
+
+type NavQueryData = {
+  categoriesByIdMap: Map<number, Category>;
+  notesByCategoryIdMap: Map<number, NoteSummary[]>;
+};
 
 export default function useUpdateCategoryName() {
-  const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState<unknown>(null);
-  const [categoriesById, setCategoriesById] = useAtom(categoriesByIdAtom);
+  const queryClient = useQueryClient();
+  const loginUser = useAtomValue(loginUserAtom);
 
-  const update = useCallback(
-    async (categoryId: number, newName: string) => {
-      setIsPending(true);
-      setError(null);
+  const mutation = useMutation({
+    mutationFn: async ({ categoryId, newName }: UpdateCategoryPrams) => {
+      await customAxios.patch(`notes/categories/${categoryId}`, { name: newName });
+    },
+    // 楽観的更新
+    onMutate: async ({ categoryId, newName }) => {
+      if (!loginUser) return;
+      const queryKey = ['nav', loginUser.userId];
 
-      // 現在値を保存（失敗時ロールバック用）
-      const prev = categoriesById.get(categoryId);
-      if (!prev) return;
+      await queryClient.cancelQueries({ queryKey });
 
-      // 楽観的更新
-      setCategoriesById(new Map(categoriesById.set(categoryId, { ...prev, name: newName } as Category)));
+      const previousNav = queryClient.getQueryData<NavQueryData>(queryKey);
 
-      try {
-        // PATCH /categories/:id { name }
-        await customAxios.patch(`notes/categories/${categoryId}`, { name: newName });
-      } catch (e) {
-        setError(e);
-        // ロールバック
-        setCategoriesById(new Map(categoriesById.set(categoryId, prev)));
-        throw e;
-      } finally {
-        setIsPending(false);
+      if (previousNav) {
+        // Map の中身を安全にコピーして新状態を作る
+        const nextCategories = new Map(previousNav.categoriesByIdMap);
+        const prevCat = nextCategories.get(categoryId);
+        if (prevCat) {
+          nextCategories.set(categoryId, { ...prevCat, name: newName });
+        }
+
+        queryClient.setQueryData<NavQueryData>(queryKey, {
+          ...previousNav,
+          categoriesByIdMap: nextCategories,
+        });
+      }
+
+      return { previousNav };
+    },
+    onError: (_err, _newVal, context) => {
+      if (context?.previousNav && loginUser) {
+        queryClient.setQueryData(['nav', loginUser.userId], context.previousNav);
       }
     },
-    [categoriesById, setCategoriesById]
-  );
+    onSettled: () => {
+      if (loginUser) {
+        queryClient.invalidateQueries({ queryKey: ['nav', loginUser.userId] });
+      }
+    },
+  });
 
-  return { update, isPending, error };
+  // 既存インターフェースに合わせる
+  const update = async (categoryId: number, newName: string) => {
+    return mutation.mutateAsync({ categoryId, newName });
+  };
+
+  return { update, isPending: mutation.isPending, error: mutation.error };
 }

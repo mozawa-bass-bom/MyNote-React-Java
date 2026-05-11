@@ -2,6 +2,8 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import customAxios, { getOk } from '../../helpers/CustomAxios';
+import { Button } from '../../ui/Button';
+import { Input } from '../../ui/Input';
 
 type Availability = { userNameAvailable?: boolean; emailAvailable?: boolean };
 type Form = { userName: string; email: string; password: string; password2: string };
@@ -98,84 +100,80 @@ export default function RegisterForm() {
 
   return (
     <form onSubmit={handleSubmit} className="w-full">
-      <div>
-        <label className="block text-m mb-1">
-          ユーザー名
-          <input
+      <div className="space-y-4">
+        <div>
+          <Input
+            label="ユーザー名"
             type="text"
             value={f.userName}
             onChange={onChange('userName')}
             onBlur={checkUserNameOnBlur}
-            className="mt-1 w-full border rounded px-2 py-1"
             autoComplete="username"
             disabled={isPending}
+            fullWidth
           />
-        </label>
-        {checking.userName && <p className="text-sm text-gray-500">ユーザー名を確認中…</p>}
-        {userNameAvailable === true && <p className="text-sm text-green-700">このユーザー名は利用できます。</p>}
-        {userNameAvailable === false && <p className="text-sm text-red-600">このユーザー名は既に使われています。</p>}
-      </div>
+          {checking.userName && <p className="text-sm text-muted-foreground mt-1">ユーザー名を確認中…</p>}
+          {userNameAvailable === true && <p className="text-sm text-success mt-1">このユーザー名は利用できます。</p>}
+          {userNameAvailable === false && <p className="text-sm text-destructive mt-1">このユーザー名は既に使われています。</p>}
+        </div>
 
-      <div>
-        <label className="block text-m mb-1">
-          メールアドレス
-          <input
+        <div>
+          <Input
+            label="メールアドレス"
             type="email"
             value={f.email}
             onChange={onChange('email')}
             onBlur={checkEmailOnBlur}
-            className="mt-1 w-full border rounded px-2 py-1"
             autoComplete="email"
             disabled={isPending}
+            fullWidth
           />
-        </label>
-        {checking.email && <p className="text-sm text-gray-500">メールアドレスを確認中…</p>}
-        {emailAvailable === true && <p className="text-sm text-green-700">このメールは利用できます。</p>}
-        {emailAvailable === false && <p className="text-sm text-red-600">このメールは既に使われています。</p>}
-      </div>
+          {checking.email && <p className="text-sm text-muted-foreground mt-1">メールアドレスを確認中…</p>}
+          {emailAvailable === true && <p className="text-sm text-success mt-1">このメールは利用できます。</p>}
+          {emailAvailable === false && <p className="text-sm text-destructive mt-1">このメールは既に使われています。</p>}
+        </div>
 
-      <div>
-        <label className="block text-m mb-1">
-          パスワード
-          <input
+        <div>
+          <Input
+            label="パスワード"
             type="password"
             value={f.password}
             onChange={onChange('password')}
-            className="mt-1 w-full border rounded px-2 py-1"
             autoComplete="new-password"
             disabled={isPending}
+            fullWidth
           />
-        </label>
-      </div>
-      <div>
-        <label className="block text-m mb-1">
-          パスワード（再入力）
-          <input
+        </div>
+
+        <div>
+          <Input
+            label="パスワード（再入力）"
             type="password"
             value={f.password2}
             onChange={onChange('password2')}
-            className="mt-1 w-full border rounded px-2 py-1"
             autoComplete="new-password"
             disabled={isPending}
+            fullWidth
           />
-        </label>
+        </div>
       </div>
 
       {isError && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-destructive">
           {isError}
         </p>
       )}
 
       <div className="flex w-full mt-4 gap-4">
-        <button
+        <Button
           type="submit"
-          className="flex-1 px-3 py-1.5 rounded bg-black text-white text-center disabled:opacity-50"
+          variant="primary"
+          className="flex-1 text-sm py-2"
           disabled={isPending}
         >
           {isPending ? '登録中…' : '登録する'}
-        </button>
-        <Link to="/" className="flex-1 px-3 py-1.5 rounded border text-sm text-center">
+        </Button>
+        <Link to="/" className="flex-1 px-3 py-2 rounded border border-input hover:bg-muted transition-colors text-sm text-center flex items-center justify-center font-medium">
           ログインへ戻る
         </Link>
       </div>

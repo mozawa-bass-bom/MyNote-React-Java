@@ -13,30 +13,34 @@ import Register from './pages/auth/Register';
 
 import UserLayout from './pages/layouts/UserLayout';
 import AdminLayout from './pages/layouts/AdminLayout';
+import ToastHost from './ui/ToastHost';
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Index />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/resetPass" element={<ResetPass />} />
-      <Route path="/notes" element={<UserLayout />}>
-        <Route index element={<NotesIndex />} />
-        <Route path=":userSeqNo" element={<NoteDetails />} />
-        <Route path="upload" element={<Upload />} />
-        <Route path="setting" element={<Setting />} />
-      </Route>
+    <>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/resetPass" element={<ResetPass />} />
+        <Route path="/notes" element={<UserLayout />}>
+          <Route index element={<NotesIndex />} />
+          <Route path=":userSeqNo" element={<NoteDetails />} />
+          <Route path="upload" element={<Upload />} />
+          <Route path="setting" element={<Setting />} />
+        </Route>
 
-      <Route path="/contact">
-        <Route index element={<ContactPage />} />
-      </Route>
+        <Route path="/contact">
+          <Route index element={<ContactPage />} />
+        </Route>
 
-      <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={<UserList />} />
-        <Route path="contactList" element={<ContactList />} />
-      </Route>
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<UserList />} />
+          <Route path="contactList" element={<ContactList />} />
+        </Route>
+        <Route path="*" element={<PageNotFound />} />
+      </Routes>
+      <ToastHost />
+    </>
   );
 }
 

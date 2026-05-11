@@ -5,10 +5,10 @@ import { useState, memo } from 'react';
 type Variant = 'error' | 'success' | 'warning' | 'info';
 
 const styles: Record<Variant, string> = {
-  error: 'bg-red-50 text-red-800 border-red-200',
-  success: 'bg-green-50 text-green-800 border-green-200',
-  warning: 'bg-yellow-50 text-yellow-900 border-yellow-200',
-  info: 'bg-blue-50 text-blue-800 border-blue-200',
+  error: 'bg-destructive/10 text-destructive border-destructive/20',
+  success: 'bg-success/10 text-success border-success/20',
+  warning: 'bg-warning/10 text-warning border-warning/20',
+  info: 'bg-info/10 text-info border-info/20',
 };
 
 type Props = {

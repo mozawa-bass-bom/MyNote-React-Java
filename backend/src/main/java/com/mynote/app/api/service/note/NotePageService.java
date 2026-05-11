@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j; // 💡 ロギングを追加
 public class NotePageService {
 
     private final NotePageMapper notePageMapper;
+    private final com.mynote.app.domain.mapper.NoteMapper noteMapper;
 
     @Transactional(readOnly = true)
     public List<NotePage> findByNoteId(Long noteId) {
@@ -79,6 +80,32 @@ public class NotePageService {
             return false;
         }
 	}
+
+    /**
+     * ページのOCRテキストを更新する。（所有権チェック付き）
+     * @param userId ユーザーID
+     * @param pageId 更新対象のページID
+     * @param extractedText 新しいテキスト
+     * @return 更新件数が1件の場合 true
+     */
+	@Transactional(rollbackFor = Exception.class)
+	public boolean updateExtractedTextWithOwnerCheck(Long userId, Long pageId, String extractedText) {
+        log.debug("Service: updateExtractedTextWithOwnerCheck called for userId={}, pageId={}", userId, pageId);
+
+        // 1. pageIdからNoteIdを取得
+        long noteId = notePageMapper.findNoteIdById(pageId);
+
+        // 2. NoteIdとUserIdを使って所有権をチェック
+        com.mynote.app.domain.entity.Note note = noteMapper.findById(noteId);
+        if (note == null || !note.getUserId().equals(userId)) {
+            log.warn("Access forbidden or Note not found: userId={}, noteId={}", userId, noteId);
+            return false;
+        }
+
+        // 3. 権限チェックOK、更新を実行
+        return updateExtractedText(pageId, extractedText);
+	}
+
 
     /**
      * 指定したページを削除する。

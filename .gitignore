@@ -22,5 +22,13 @@ build/
 .DS_Store
 Thumbs.db
 
-# Secrets
+# secrets
+backend/keys/*.json
 backend/src/main/resources/keys/*.json
+
+# windows metadata
+*Zone.Identifier
+
+# env
+.env
+.env.*

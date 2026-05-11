@@ -2,6 +2,8 @@
 import { useRef, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useLogin from '../../hooks/useLogin';
+import { Button } from '../../ui/Button';
+import { Input } from '../../ui/Input';
 
 export default function LoginForm() {
   const loginIdRef = useRef<HTMLInputElement>(null);
@@ -24,46 +26,43 @@ export default function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full">
+    <form onSubmit={handleSubmit} className="w-full space-y-4">
       <div>
-        <label className="block text-m mb-2">
-          ログイン ID
-          <input
-            type="text"
-            ref={loginIdRef}
-            className="mt-1 w-full border rounded px-2 py-1"
-            autoComplete="username"
-            disabled={isPending}
-          />
-        </label>
+        <Input
+          label="ログイン ID"
+          type="text"
+          ref={loginIdRef}
+          autoComplete="username"
+          disabled={isPending}
+          fullWidth
+        />
       </div>
-      <div className=" mb-4">
-        <label className="block text-m">
-          パスワード
-          <input
-            type="password"
-            ref={loginPassRef}
-            className="mt-1 w-full border rounded px-2 py-1"
-            autoComplete="current-password"
-            disabled={isPending}
-          />
-        </label>
+      <div>
+        <Input
+          label="パスワード"
+          type="password"
+          ref={loginPassRef}
+          autoComplete="current-password"
+          disabled={isPending}
+          fullWidth
+        />
       </div>
 
       {isError && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-destructive">
           ログインに失敗しました。
         </p>
       )}
 
-      <div className="w-full">
-        <button
+      <div>
+        <Button
           type="submit"
-          className="px-3 flex w-full items-center justify-center py-1.5 rounded bg-black text-white disabled:opacity-50"
+          variant="primary"
+          fullWidth
           disabled={isPending}
         >
           {isPending ? 'ログイン中…' : 'ログイン'}
-        </button>
+        </Button>
       </div>
     </form>
   );

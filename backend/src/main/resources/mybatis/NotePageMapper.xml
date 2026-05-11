@@ -46,8 +46,31 @@
 		WHERE note_id = #{noteId} ORDER BY page_number ASC
 	</select>
 
+	<select id="findByNoteIds" resultMap="NotePageMap">
+		SELECT * FROM note_pages
+		WHERE note_id IN
+		<foreach item="item" index="index" collection="noteIds" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		ORDER BY note_id ASC, page_number ASC
+	</select>
+
 	<select id="findNoteIdById" resultType="long"> SELECT note_id FROM
 		note_pages WHERE id = #{id}
 	</select>
+
+	<!-- バルクUPDATE（AIインジェスト結果のextractedText一括更新） -->
+	<update id="updateExtractedTextBatch">
+		UPDATE note_pages
+		SET extracted_text = CASE id
+		<foreach collection="updates" index="id" item="text">
+			WHEN #{id} THEN #{text}
+		</foreach>
+		END
+		WHERE id IN
+		<foreach collection="updates" index="id" item="text" open="(" separator="," close=")">
+			#{id}
+		</foreach>
+	</update>
 
 </mapper>

@@ -8,7 +8,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.mynote.app.api.dto.note.NoteByUserSeqNoResponceDto;
+import com.mynote.app.api.dto.note.NoteByUserSeqNoResponseDto;
 import com.mynote.app.api.dto.note.NoteRequestDto;
 import com.mynote.app.api.dto.note.NoteResponseDto;
 import com.mynote.app.api.dto.note.PageResponseDto;
@@ -80,7 +80,7 @@ public class NoteService {
 	  }
 	}
 
-	public  NoteByUserSeqNoResponceDto getNoteByUserSeqNo(Long userId, Integer userSeqNo) {
+	public  NoteByUserSeqNoResponseDto getNoteByUserSeqNo(Long userId, Integer userSeqNo) {
 		
 		Note note = noteMapper.findByUserAndSeq(userId, userSeqNo);
 		if (note == null) {
@@ -93,7 +93,7 @@ public class NoteService {
 		NoteResponseDto noteDto = toListResponseDto(note);
 		List<PageResponseDto> page = pages.stream().map(this::toPageResponseDto).collect(Collectors.toList());
 		List<TocResponseDto> toc = indices.stream().map(this::toTocResponseDto).collect(Collectors.toList());
-		NoteByUserSeqNoResponceDto dto = new NoteByUserSeqNoResponceDto();
+		NoteByUserSeqNoResponseDto dto = new NoteByUserSeqNoResponseDto();
 		dto.setNote(noteDto);
 		dto.setPage(page);
 		dto.setToc(toc);
@@ -146,21 +146,22 @@ public class NoteService {
 
 		// 1. ユーザーの全ノートを取得
 		List<Note> notes = noteMapper.findAllByUserId(userId);
+		if (notes.isEmpty()) {
+			return java.util.Collections.emptyMap();
+		}
 
-		// 2. 各ノートのNoteIndexリストを取得し、flatMapで結合・変換する
-		List<TocResponseDto> allTocDtos = notes.stream()
-				.flatMap(note -> {
-					Long noteId = note.getId();
+		// 2. ノートのIDリストを抽出
+		List<Long> noteIds = notes.stream().map(Note::getId).collect(Collectors.toList());
 
-					// N+1問題の発生源
-					List<NoteIndex> noteIndexList = noteIndexMapper.findByNoteId(noteId);
+		// 3. IN句を使って全てのNoteIndexを1クエリで取得（N+1対策済）
+		List<NoteIndex> noteIndices = noteIndexMapper.findByNoteIds(noteIds);
 
-					// NoteIndexをTocResponseDtoに変換
-					return noteIndexList.stream().map(this::toTocResponseDto);
-				})
+		// 4. NoteIndexをTocResponseDtoに変換
+		List<TocResponseDto> allTocDtos = noteIndices.stream()
+				.map(this::toTocResponseDto)
 				.collect(Collectors.toList());
 
-		// 3. ノートId (getNoteId) でグループ化してMapとして返す
+		// 5. ノートId (getNoteId) でグループ化してMapとして返す
 		return allTocDtos.stream()
 				.collect(Collectors.groupingBy(TocResponseDto::getNoteId));
 	}
@@ -193,17 +194,17 @@ public class NoteService {
 		log.debug("Service: getAllNotePages called for userId={}", userId);
 
 		List<Note> notes = noteMapper.findAllByUserId(userId);
+		if (notes.isEmpty()) {
+			return java.util.Collections.emptyMap();
+		}
 
-		List<PageResponseDto> allPageDtos = notes.stream()
-				.flatMap(note -> {
-					Long noteId = note.getId();
+		List<Long> noteIds = notes.stream().map(Note::getId).collect(Collectors.toList());
 
-					// N+1問題の発生源
-					List<NotePage> notePageList = notePageMapper.findByNoteId(noteId);
+		// IN句を使って全てのNotePageを1クエリで取得（N+1対策済）
+		List<NotePage> notePages = notePageMapper.findByNoteIds(noteIds);
 
-					// NotePageをPageResponseDtoに変換
-					return notePageList.stream().map(this::toPageResponseDto);
-				})
+		List<PageResponseDto> allPageDtos = notePages.stream()
+				.map(this::toPageResponseDto)
 				.collect(Collectors.toList());
 
 		// 3. ノートId (getNoteId) でグループ化してMapとして返す

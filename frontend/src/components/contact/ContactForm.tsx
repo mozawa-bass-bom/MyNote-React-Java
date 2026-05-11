@@ -79,13 +79,13 @@ export default function ContactForm({ onConfirm, isPending, error }: Props) {
         />
       </div>
 
-      {error && <div className="text-sm text-red-700">{error}</div>}
+      {error && <div className="text-sm text-destructive">{error}</div>}
 
       <div className="pt-2">
         <button
           type="submit"
           disabled={isPending}
-          className="rounded bg-black/80 text-white px-4 py-1.5 disabled:opacity-50"
+          className="rounded bg-foreground/80 text-background px-4 py-1.5 disabled:opacity-50"
         >
           確認
         </button>

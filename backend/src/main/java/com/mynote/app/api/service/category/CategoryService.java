@@ -102,22 +102,22 @@ public class CategoryService {
  
  /**
   * カテゴリIDを指定してプロンプト情報を取得する。
-  * 存在しない、または権限がない場合は null を返す。
-  * * @param id カテゴリID
+  * 存在しない、または所有者でない場合は null を返す。
+  *
+  * @param userId リクエスト元のユーザーID
+  * @param id カテゴリID
   * @return プロンプト情報DTO。見つからない場合は null
   */
  @Transactional(readOnly = true)
- public CategoryPromptResponseDto getPrompts(Long id) {
-     log.debug("Service: getPrompts called with id={}", id);
+ public CategoryPromptResponseDto getPrompts(Long userId, Long id) {
+     log.debug("Service: getPrompts called with userId={}, id={}", userId, id);
      
-     // 所有者チェック込みで取得 (Mapperにそのロジックがあると仮定)
      Category cat = categoryMapper.findById(id);
 
-     if (cat == null) {
-         return null; // Controllerに処理を委譲
+     if (cat == null || !cat.getUserId().equals(userId)) {
+         return null; // カテゴリが存在しない、または所有者が異なる
      }
 
-     // エンティティからDTOへの変換
      var dto = new CategoryPromptResponseDto();
      dto.setCategoryId(cat.getId());
      dto.setPrompt1(cat.getPrompt1());
@@ -129,18 +129,22 @@ public class CategoryService {
  /**
   * カテゴリ名を更新する。
   *
+  * @param userId リクエスト元のユーザーID
   * @param id 更新対象のカテゴリID
   * @param name 新しいカテゴリ名
   * @return 更新件数 (1:成功, 0:失敗/見つからない)
   */
  @Transactional
- public int updateName(Long id, String name) {
-     log.debug("Service: updateName called with id={}, name={}", id, name);
+ public int updateName(Long userId, Long id, String name) {
+     log.debug("Service: updateName called with userId={}, id={}, name={}", userId, id, name);
      
-     // データの永続化処理を実行
-     int updatedCount = categoryMapper.updateName(id, name);
+     // 所有権チェック
+     Category cat = categoryMapper.findById(id);
+     if (cat == null || !cat.getUserId().equals(userId)) {
+         return 0;
+     }
      
-     return updatedCount;
+     return categoryMapper.updateName(id, name);
  }
 
 

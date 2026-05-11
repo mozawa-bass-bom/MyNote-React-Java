@@ -4,16 +4,11 @@ package com.mynote.app.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableAsync;
 
 import com.google.cloud.vertexai.VertexAI;
 
 @Configuration
-@EnableAsync
 public class ApplicationConfig {
-
-  @Value("${gemini.credentials-path:keys/gemini-service-account.json}")
-  private String geminiCredentialsPath;
 
   @Value("${gemini.project-id}")
   private String projectId;
@@ -21,7 +16,7 @@ public class ApplicationConfig {
   @Value("${gemini.location}")
   private String location;
 
-  @Value("${gemini.model-id:gemini-2.0-flash}")
+  @Value("${gemini.model-id:gemini-2.5-flash}")
   private String modelId;
 
   @Bean(destroyMethod = "close")

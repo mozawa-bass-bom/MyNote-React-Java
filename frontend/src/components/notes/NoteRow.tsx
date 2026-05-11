@@ -1,8 +1,7 @@
-import { memo, useMemo } from 'react';
-import { useAtomValue } from 'jotai';
+import { memo } from 'react';
 import type { NoteSummary } from '../../types/base';
-import { tocByNoteIdAtom } from '../../states/UserAtom';
-import DeleteNoteButton from '../ui/DeleteNoteButton';
+import { useTocForNote } from '../../hooks/queries/useToc';
+import DeleteNoteButton from '../../ui/DeleteNoteButton';
 import { NoteTitle } from './NoteTitle';
 
 function fmtDate(d?: string) {
@@ -15,13 +14,12 @@ function fmtDate(d?: string) {
 type Props = { note: NoteSummary };
 
 export const NoteRow = memo(function NoteRow({ note }: Props) {
-  const tocByNoteId = useAtomValue(tocByNoteIdAtom);
-  const toc = useMemo(() => tocByNoteId.get(note.id) ?? [], [tocByNoteId, note.id]);
+  const { tocItems: toc } = useTocForNote(note.id);
 
   return (
     <article
       className={[
-        'rounded-xl border border-gray-200 bg-white/70 p-4 shadow-sm',
+        'rounded-xl border border-border bg-background/70 p-4 shadow-sm',
         'transition-shadow hover:shadow-md h-full',
         'flex flex-col min-h-0',
       ].join(' ')}
@@ -31,23 +29,23 @@ export const NoteRow = memo(function NoteRow({ note }: Props) {
         <NoteTitle title={note.title} categoryId={note.categoryId} userSeqNo={note.userSeqNo} />
 
         {/* 作成日バッジ */}
-        <span className="shrink-0 rounded-md bg-black/5 px-2 py-0.5 text-xs text-gray-600">
+        <span className="shrink-0 rounded-md bg-foreground/5 px-2 py-0.5 text-xs text-muted-foreground">
           作成: {fmtDate(note.createdAt)}
         </span>
       </header>
 
       {/* 目次 */}
-      <section className="mt-3 border-t border-gray-100 py-3 ">
+      <section className="mt-3 border-t border-border py-3 ">
         {toc.length === 0 ? (
-          <div className="text-sm text-gray-500">— 目次なし —</div>
+          <div className="text-sm text-muted-foreground">— 目次なし —</div>
         ) : (
           <ul className="list-decimal space-y-1 pl-5 text-sm list-none">
             {toc.map((t) => (
-              <li key={t.id} className="text-gray-800">
+              <li key={t.id} className="text-foreground">
                 <span className="font-medium">
                   {t.indexNumber}. {t.title}
                 </span>
-                <span className="ml-1 text-gray-500">
+                <span className="ml-1 text-muted-foreground">
                   （{t.startPage}–{t.endPage}）
                 </span>
               </li>

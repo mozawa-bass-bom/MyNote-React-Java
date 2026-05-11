@@ -81,7 +81,7 @@ customAxios.interceptors.response.use(
     // セッション切れ等：401/419 でログアウト誘導（プロジェクト方針次第）
     if (status === 401 || status === 419) {
       localStorage.removeItem('loginUser');
-      window.location.assign('/login');
+      window.location.assign('/');
     }
 
     return Promise.reject(error);

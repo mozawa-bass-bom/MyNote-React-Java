@@ -1,6 +1,7 @@
 package com.mynote.app.api.service.upload;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +19,6 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import com.mynote.app.api.dto.ai.AiIngestRequestDto;
 import com.mynote.app.api.dto.ai.AiPageDetailDto;
 import com.mynote.app.api.dto.ai.AiSectionDto;
-import com.mynote.app.api.dto.note.NoteIndexRequestDto;
 import com.mynote.app.api.dto.note.NotePageRequestDto;
 import com.mynote.app.api.dto.note.NoteRequestDto;
 import com.mynote.app.api.service.note.NoteIndexService;
@@ -275,34 +275,39 @@ public class UploadFacadeService {
 			}
 		}
 
-		// 2) 目次 → 差し替え
+		// 2) 目次 → 全削除 + バルクINSERT
 		if (req.getSections() != null) {
-			var existing = noteIndexMapper.findByNoteId(noteId);
-			for (NoteIndex idx : existing)
-				noteIndexMapper.delete(idx.getId());
+			// 既存レコードを1クエリで全削除
+			noteIndexMapper.deleteByNoteId(noteId);
 
+			// 新規レコードをエンティティリストに変換
+			List<NoteIndex> newIndexes = new ArrayList<>();
 			int idxNo = 1;
 			for (AiSectionDto s : req.getSections()) {
-				if (s == null)
-					continue;
+				if (s == null) continue;
 
 				String title = nullToEmpty(s.getTitle());
 				if (title.codePointCount(0, title.length()) > 12) {
 					title = title.substring(0, title.offsetByCodePoints(0, 12));
 				}
 
-				NoteIndexRequestDto indexDto = new NoteIndexRequestDto();
-				indexDto.setNoteId(noteId);
-				indexDto.setIndexNumber(idxNo++);
-				indexDto.setStartIndex(s.getStartPage());
-				indexDto.setEndIndex(s.getEndPage());
-				indexDto.setTitle(title);
-				indexDto.setBody(nullToEmpty(s.getContentSummaryMd()));
-				noteIndexService.createNoteIndex(indexDto);
+				NoteIndex idx = new NoteIndex();
+				idx.setNoteId(noteId);
+				idx.setIndexNumber(idxNo++);
+				idx.setStartIndex(s.getStartPage());
+				idx.setEndIndex(s.getEndPage());
+				idx.setTitle(title);
+				idx.setBody(nullToEmpty(s.getContentSummaryMd()));
+				newIndexes.add(idx);
+			}
+
+			// バルクINSERT（リストが空なら何もしない）
+			if (!newIndexes.isEmpty()) {
+				noteIndexMapper.insertBatch(newIndexes);
 			}
 		}
 
-		// 3) ページ本文 → note_pages.extracted_text
+		// 3) ページ本文 → note_pages.extracted_text をバルクUPDATE
 		if (req.getPageDetails() != null && !req.getPageDetails().isEmpty()) {
 			List<NotePage> pages = notePageMapper.findByNoteId(noteId);
 			Map<Integer, Long> pageNoToId = pages.stream()
@@ -313,12 +318,12 @@ public class UploadFacadeService {
 							(a, b) -> a,
 							TreeMap::new));
 
+			// id -> text のマップを構築してバルクUPDATE
+			Map<Long, String> updates = new java.util.LinkedHashMap<>();
 			for (AiPageDetailDto pd : req.getPageDetails()) {
-				if (pd == null)
-					continue;
+				if (pd == null) continue;
 				Integer pageNo = pd.getPageNumber();
-				if (pageNo == null)
-					continue;
+				if (pageNo == null) continue;
 
 				Long pageId = pageNoToId.get(pageNo);
 				if (pageId == null) {
@@ -326,12 +331,14 @@ public class UploadFacadeService {
 					continue;
 				}
 
-				// 優先順位：Markdown → HTML → legacy
-				  String text = trimToNull(pd.getDetailedExplanationMd());
-				if (text == null)
-					continue;
+				String text = trimToNull(pd.getDetailedExplanationMd());
+				if (text == null) continue;
 
-				notePageService.updateExtractedText(pageId, text);
+				updates.put(pageId, text);
+			}
+
+			if (!updates.isEmpty()) {
+				notePageMapper.updateExtractedTextBatch(updates);
 			}
 		}
 

@@ -10,10 +10,10 @@ type Props = {
 
 const TocCard = memo(function TocCard({ items, noteId }: Props) {
   return (
-    <div className="rounded-lg border border-gray-200 p-3 md:col-span-2">
+    <div className="rounded-lg border border-border p-3 md:col-span-2">
       <h2 className="mt-0 text-base font-semibold">目次</h2>
       {items.length === 0 ? (
-        <div className="text-gray-500">— 目次なし —</div>
+        <div className="text-muted-foreground">— 目次なし —</div>
       ) : (
         <ul className="m-0 space-y-2 pl-5 leading-7">
           {items.map((t) => (

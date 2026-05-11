@@ -11,7 +11,7 @@ const NoteHeader = memo(function NoteHeader({ title, description, userSeqNo, id,
       <h1 className="mb-4 text-2xl font-semibold">
         <NoteTitleEditor categoryId={categoryId} noteId={id} userSeqNo={userSeqNo} initialTitle={title} />
       </h1>
-      <div className="rounded-lg border border-gray-200 p-3">
+      <div className="rounded-lg border border-border p-3">
         <p className="mt-0 text-base font-semibold">概要</p>
         <div className="m-0 space-y-2 pl-5 leading-7">
           <NoteDiscriptionEditor userSeqNo={userSeqNo} initialDiscription={description} />

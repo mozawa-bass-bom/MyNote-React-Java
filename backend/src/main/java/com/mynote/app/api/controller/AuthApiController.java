@@ -3,7 +3,7 @@ package com.mynote.app.api.controller;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import jakarta.servlet.http.HttpSession;
+
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,7 +35,7 @@ public class AuthApiController {
 
 	private final AuthService authService;
 	private final NavService navService;
-	private final HttpSession session;
+	private final TokenUtil tokenUtil;
 
 	@PostMapping("/login")
 	public ResponseEntity<AuthLoginResponseDto> login(@RequestBody LoginUser loginUser) {
@@ -51,12 +51,8 @@ public class AuthApiController {
 		Long userId = user.getUserId();
 		NavTreeDto navTree = navService.getNavTree(userId); // NavServiceから取得
 
-		// 3. トークン生成とセッション保存
-		String token = TokenUtil.generateToken(user.getUserName(), user.getRole());
-		session.setAttribute("userId", userId);        // Long
-		session.setAttribute("userName", user.getUserName());    // String
-		session.setAttribute("role", user.getRole());            // String
-		session.setAttribute("jwt", token);                          
+		// 3. トークン生成
+		String token = tokenUtil.generateToken(userId, user.getUserName(), user.getRole());
 
 		// 4. レスポンスDTOの作成
 		AuthLoginResponseDto response = new AuthLoginResponseDto(
@@ -138,15 +134,13 @@ public class AuthApiController {
 	}
 
 	@DeleteMapping("/deleteUser")
-	public ResponseEntity<String> deleteUser() {
-		Long userId = (Long) session.getAttribute("userId");
+	public ResponseEntity<String> deleteUser(@org.springframework.web.bind.annotation.RequestAttribute("userId") Long userId) {
 		if (userId == null) {
 			return new ResponseEntity<>("No user logged in", HttpStatus.UNAUTHORIZED);
 		}
 
 		boolean deleted = authService.deleteUser(userId);
 		if (deleted) {
-			session.invalidate();
 			return new ResponseEntity<>("User deleted successfully", HttpStatus.OK);
 		} else {
 			return new ResponseEntity<>("User deletion failed", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -155,8 +149,8 @@ public class AuthApiController {
 	
 	@GetMapping("/logout")
 	public ResponseEntity<String> logout() {
-		session.invalidate();
-		return new ResponseEntity<>("logout: invalidated session",
+		// JWTの場合はステートレスなためサーバー側で破棄するセッションはありません
+		return new ResponseEntity<>("logout: client should discard token",
 				HttpStatus.OK);
 	}
 }

@@ -71,15 +71,15 @@ export default function ContactIndex() {
 
         {mode === 'done' && (
           <div>
-            <div className="rounded border bg-green-50 p-4">
+            <div className="rounded border bg-success/10 p-4">
               <div className="font-medium">送信しました。ご連絡ありがとうございます！</div>
-              <div className="text-sm text-gray-600 mt-1">内容を確認のうえ、必要に応じてご返信します。</div>
+              <div className="text-sm text-muted-foreground mt-1">内容を確認のうえ、必要に応じてご返信します。</div>
             </div>
             <Link to="/notes">戻る</Link>
           </div>
         )}
 
-        {error && mode !== 'done' && <div className="text-sm text-red-700">{error}</div>}
+        {error && mode !== 'done' && <div className="text-sm text-destructive">{error}</div>}
       </div>
     </div>
   );

@@ -1,72 +1,90 @@
-import { useCallback, useState } from 'react';
+// src/hooks/useUpdateNoteTitle.ts
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import customAxios from '../helpers/CustomAxios';
-import { useSetAtom } from 'jotai';
-import { notesByCategoryIdAtom } from '../states/UserAtom';
-import type { NoteSummary } from '../types/base';
+import { useAtomValue } from 'jotai';
+import { loginUserAtom } from '../states/UserAtom';
+import type { Category, NoteSummary } from '../types/base';
+
+type UpdateTitleParams = {
+  categoryId: number;
+  userSeqNo: number;
+  newTitle: string;
+};
+
+type NavQueryData = {
+  categoriesByIdMap: Map<number, Category>;
+  notesByCategoryIdMap: Map<number, NoteSummary[]>;
+};
 
 export default function useUpdateNoteTitle() {
-  const setNotesByCategoryId = useSetAtom(notesByCategoryIdAtom); // 値は読まないので useSetAtom に
-  const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState<unknown>(null);
+  const queryClient = useQueryClient();
+  const loginUser = useAtomValue(loginUserAtom);
 
-  // AtomがカテゴリーIDをKEYにしてるのでpropsで渡す
-  const updateNoteTitle = useCallback(
-    async (
-      { categoryId, userSeqNo }: { categoryId: number; userSeqNo: number },
-      newTitle: string
-    ): Promise<boolean> => {
+  const mutation = useMutation({
+    mutationFn: async ({ userSeqNo, newTitle }: UpdateTitleParams) => {
+      await customAxios.patch(`/notes/${userSeqNo}/title`, { title: newTitle });
+    },
+    onMutate: async ({ categoryId, userSeqNo, newTitle }) => {
       const title = newTitle.trim();
-      if (!title) return false; // 空は無視
+      if (!title || !loginUser) return;
+      
+      const queryKey = ['nav', loginUser.userId];
+      await queryClient.cancelQueries({ queryKey });
+      
+      const previousNav = queryClient.getQueryData<NavQueryData>(queryKey);
 
-      setIsPending(true);
-      setError(null);
-
-      let rollback: Map<number, NoteSummary[]> | null = null;
-      let updated = false;
-
-      // 楽観更新＋スナップショット
-      setNotesByCategoryId((prev) => {
-        // スナップショット（配列は浅いコピー）
-        rollback = new Map(Array.from(prev.entries()).map(([k, v]) => [k, v.slice()]));
-
-        const list = prev.get(categoryId) ?? [];
-        const idx = list.findIndex((n) => n.userSeqNo === userSeqNo);
-        if (idx === -1) return prev;
-
-        // 変更なしなら早期return（APIも叩かない）
-        if (list[idx].title === title) {
-          updated = false;
-          return prev;
+      if (previousNav) {
+        const nextNotes = new Map(previousNav.notesByCategoryIdMap);
+        const list = nextNotes.get(categoryId) ?? [];
+        const idx = list.findIndex(n => n.userSeqNo === userSeqNo);
+        
+        if (idx !== -1 && list[idx].title !== title) {
+          const nextList = [...list];
+          nextList[idx] = { ...nextList[idx], title };
+          nextNotes.set(categoryId, nextList);
+          
+          queryClient.setQueryData<NavQueryData>(queryKey, {
+            ...previousNav,
+            notesByCategoryIdMap: nextNotes,
+          });
         }
-
-        const next = new Map(prev);
-        const nextList = list.slice();
-        nextList[idx] = { ...nextList[idx], title };
-        next.set(categoryId, nextList);
-
-        updated = true;
-        return next;
-      });
-
-      if (!updated) {
-        setIsPending(false);
-        return false;
       }
 
-      try {
-        await customAxios.patch(`/notes/${userSeqNo}/title`, { title });
-        return true;
-      } catch (e) {
-        // ロールバック
-        if (rollback) setNotesByCategoryId(rollback);
-        setError(e);
-        return false; // ここは throw でもOK。用途に合わせて。
-      } finally {
-        setIsPending(false);
+      // NoteDetail側もキャッシュにあれば一緒にタイトル更新するとより自然（今はNavをinvalidateする運用）
+      const detailKey = ['noteDetail', userSeqNo];
+      const previousDetail = queryClient.getQueryData<any>(detailKey);
+      if (previousDetail && previousDetail.title !== title) {
+         queryClient.setQueryData(detailKey, { ...previousDetail, title });
+      }
+
+      return { previousNav };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousNav && loginUser) {
+        queryClient.setQueryData(['nav', loginUser.userId], context.previousNav);
       }
     },
-    [setNotesByCategoryId]
-  );
+    onSettled: (_data, _err, { userSeqNo }) => {
+      if (loginUser) {
+        queryClient.invalidateQueries({ queryKey: ['nav', loginUser.userId] });
+        queryClient.invalidateQueries({ queryKey: ['noteDetail', userSeqNo] });
+      }
+    },
+  });
 
-  return { updateNoteTitle, isPending, error };
+  const updateNoteTitle = async (
+    { categoryId, userSeqNo }: { categoryId: number; userSeqNo: number },
+    newTitle: string
+  ): Promise<boolean> => {
+      const title = newTitle.trim();
+      if (!title) return false;
+      try {
+        await mutation.mutateAsync({ categoryId, userSeqNo, newTitle });
+        return true;
+      } catch (e) {
+        return false;
+      }
+  };
+
+  return { updateNoteTitle, isPending: mutation.isPending, error: mutation.error };
 }

@@ -1,18 +1,17 @@
 import { useMemo } from 'react';
-import { useAtomValue } from 'jotai';
-import { categoriesByIdAtom } from '../../states/UserAtom';
+import { useCategories } from '../../hooks/queries/useNav';
 import CategoryRow from './CategoryRow';
 
 export default function Categories() {
-  const categoriesMap = useAtomValue(categoriesByIdAtom);
+  const { categoriesArray, isPending } = useCategories();
 
   const categories = useMemo(() => {
-    const arr = Array.from(categoriesMap.values());
+    const arr = [...categoriesArray];
     arr.sort((a, b) => a.id - b.id);
     return arr;
-  }, [categoriesMap]);
+  }, [categoriesArray]);
 
-  if (categoriesMap.size === 0) {
+  if (isPending) {
     return (
       <div role="status" aria-live="polite">
         ナビを読み込み中…
@@ -20,7 +19,7 @@ export default function Categories() {
     );
   }
   if (categories.length === 0) {
-    return <div className="text-sm text-gray-500">カテゴリがありません</div>;
+    return <div className="text-sm text-muted-foreground">カテゴリがありません</div>;
   }
 
   return (

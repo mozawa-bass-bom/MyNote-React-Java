@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j; // 💡 ロギングを追加
 public class NoteIndexService {
 
     private final NoteIndexMapper noteIndexMapper;
+    private final com.mynote.app.domain.mapper.NoteMapper noteMapper;
 
     @Transactional(readOnly = true)
     public List<NoteIndex> findByNoteId(Long noteId) {
@@ -101,6 +102,32 @@ public class NoteIndexService {
             return false;
         }
 	}
+
+    /**
+     * 目次の本文（body）を更新する。（所有権チェック付き）
+     * @param userId ユーザーID
+     * @param indexId 更新対象の目次ID (PK)
+     * @param body 新しい本文
+     * @return 更新が成功した場合 true
+     */
+	@Transactional(rollbackFor = Exception.class)
+	public boolean updateBodyWithOwnerCheck(Long userId, Long indexId, String body) {
+        log.debug("Service: updateBodyWithOwnerCheck called for userId={}, indexId={}", userId, indexId);
+
+        // 1. indexIdからNoteIdを取得
+        Long noteId = noteIndexMapper.findNoteIdById(indexId);
+
+        // 2. NoteIdとUserIdを使って所有権をチェック
+        com.mynote.app.domain.entity.Note note = noteMapper.findById(noteId);
+        if (note == null || !note.getUserId().equals(userId)) {
+            log.warn("Access forbidden or Note not found: userId={}, noteId={}", userId, noteId);
+            return false;
+        }
+
+        // 3. 権限チェックOK、更新を実行
+        return updateBody(indexId, body);
+	}
+
 
     /**
      * 指定した目次インデックスを削除する。

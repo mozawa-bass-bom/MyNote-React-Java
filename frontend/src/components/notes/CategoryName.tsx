@@ -65,13 +65,13 @@ export const CategoryName = memo(function CategoryTitleBar({ category, noteCount
             onKeyDown={onKeyDown}
             disabled={isPending}
             aria-label="カテゴリ名を編集"
-            className="px-2 py-1 rounded border text-sm bg-white"
+            className="px-2 py-1 rounded border text-sm bg-background"
           />
           <button
             type="button"
             onClick={confirmEdit}
             disabled={isPending}
-            className="rounded px-2 py-1 text-sm bg-black/80 text-white hover:opacity-90 disabled:opacity-50"
+            className="rounded px-2 py-1 text-sm bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
           >
             {isPending ? '保存中…' : '確定'}
           </button>
@@ -80,12 +80,12 @@ export const CategoryName = memo(function CategoryTitleBar({ category, noteCount
         <>
           <div className="font-medium">
             {category.name}
-            <span className="ml-2 text-xs text-gray-500">({noteCount})</span>
+            <span className="ml-2 text-xs text-muted-foreground">({noteCount})</span>
           </div>
           <button
             type="button"
             onClick={startEdit}
-            className="p-1 rounded bg-black/5"
+            className="p-1 rounded hover:bg-muted"
             aria-label="編集"
             onMouseDown={(e) => e.stopPropagation()}
           >

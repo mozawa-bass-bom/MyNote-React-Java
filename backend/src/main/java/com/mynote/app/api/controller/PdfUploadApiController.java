@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.SessionAttribute;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.mynote.app.api.dto.category.CategoryRequestDto;
@@ -39,7 +39,7 @@ public class PdfUploadApiController {
 	
 	@PostMapping("/nav")
 	public NavTreeDto reFreshNav(
-			@SessionAttribute(name = "userId", required = true) Long userId) {
+			@RequestAttribute(name = "userId", required = true) Long userId) {
 		NavTreeDto navTree = navService.getNavTree(userId);
 		System.out.println("Refreshed NavTree: " + navTree);
 		return navTree;
@@ -52,7 +52,7 @@ public class PdfUploadApiController {
 	 * ========================= */
 	@PostMapping(path = "/process-stream", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.TEXT_EVENT_STREAM_VALUE)
 	public SseEmitter processPdfAndStream(
-			@SessionAttribute(name = "userId", required = true) Long userId,
+			@RequestAttribute(name = "userId", required = true) Long userId,
 			@Valid @ModelAttribute PdfUploadRequestDto req) {
 		System.out.println(req);
 		// 1. SSE接続確立（以降の進捗は Facade 側から push）

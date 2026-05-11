@@ -1,47 +1,31 @@
 // hooks/useLogin.ts
 import { useState, useRef } from 'react';
-import customAxios, { getOk } from '../helpers/CustomAxios';
+import customAxios from '../helpers/CustomAxios';
 import { useSetAtom } from 'jotai';
-import {
-  categoriesByIdAtom,
-  loginUserAtom,
-  notesByCategoryIdAtom,
-  roleAtom,
-  tocByNoteIdAtom,
-} from '../states/UserAtom';
+import { loginUserAtom, roleAtom } from '../states/UserAtom';
 import type { RawLoginResponse } from '../types/loginUser';
-import { normalizeLoginResponse } from '../helpers/normalizeLogin';
-import { normalizeTocMap } from '../helpers/normalizeToc';
-import type { ApiTocMapResponse } from '../types/base';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 
 async function apiLogin(userName: string, password: string) {
   const { data } = await customAxios.post<RawLoginResponse>('/auth/login', { userName, password });
   return data;
 }
 
-async function apiFetchTocMap() {
-  return getOk<ApiTocMapResponse>('/notes/toc');
-}
-
 export default function useLogin() {
   const navigate = useNavigate();
   const [isPending, setIsPending] = useState(false);
   const [isError, setIsError] = useState(false);
-  const runningRef = useRef(false); // 二重実行ガード
+  const runningRef = useRef(false);
 
   const setRole = useSetAtom(roleAtom);
   const setLoginUser = useSetAtom(loginUserAtom);
-  const setCategoriesById = useSetAtom(categoriesByIdAtom);
-  const setNotesByCategoryId = useSetAtom(notesByCategoryIdAtom);
-  const setTocByNoteId = useSetAtom(tocByNoteIdAtom);
+  const queryClient = useQueryClient();
 
   const resetAll = () => {
     setLoginUser(null);
     setRole('USER');
-    setCategoriesById(new Map());
-    setNotesByCategoryId(new Map());
-    setTocByNoteId(new Map());
+    queryClient.clear(); // 全キャッシュクリア
   };
 
   const login = async (loginId: string, loginPass: string): Promise<boolean> => {
@@ -52,19 +36,23 @@ export default function useLogin() {
 
     try {
       const raw = await apiLogin(loginId, loginPass);
-      const { loginUser, categoriesByIdMap, notesByCategoryIdMap, role } = normalizeLoginResponse(raw);
+      // loginUser, role だけ Jotai(LocalStorage含む)にセット
+      setRole(raw.role);
+      setLoginUser({
+        userId: Number(raw.userId),
+        userName: raw.userName,
+        token: raw.token,
+      });
 
-      setRole(role);
-      setCategoriesById(new Map(categoriesByIdMap)); // Map<number, Category>
-      setNotesByCategoryId(new Map(notesByCategoryIdMap)); // Map<number, NoteSummary[]>
-      setLoginUser(loginUser);
-
-      try {
-        const tocResp = await apiFetchTocMap();
-        setTocByNoteId(normalizeTocMap(tocResp)); // Map<number, Toc[]>
-      } catch (e) {
-        console.warn('preload /notes/toc failed:', e);
-      }
+      // 注: categoriesByIdMap などは useNavQuery 等が自動的に取得してくれるため
+      // 前回のJotai状態(`categoriesByIdAtom`等へのセット)は不要になります。
+      // もし初回表示速度を上げるため prefetch するなら以下のようにする手もあります。
+      /*
+      await queryClient.prefetchQuery({
+        queryKey: ['nav', Number(raw.userId)],
+        queryFn: () => normalizeNav(raw.nav) // prefill
+      });
+      */
 
       return true;
     } catch (e) {

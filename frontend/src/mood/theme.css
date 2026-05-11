@@ -1,0 +1,179 @@
+/*
+ * ===================================================================
+ * Design Tokens — フォント & カラー変数の一元管理
+ * ===================================================================
+ * このファイルはプロジェクト全体のデザイントークン（CSS変数）を集約します。
+ * テーマ変更やブランドカラー変更はここだけで完結します。
+ *
+ * 将来的にはこの値をDB/ブラウザ(localStorage)から読み込み、
+ * ユーザーごとのカスタムテーマを動的に適用する予定です。
+ *
+ * 使い方:
+ *   - Tailwind経由: bg-primary, text-destructive, font-sans など
+ *   - CSS直接:      hsl(var(--primary)), var(--font-sans) など
+ * ===================================================================
+ */
+
+/* ===== Font Tokens ===== */
+:root {
+  --font-sans: 'Inter', 'Noto Sans JP', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+}
+
+/* ===== Color Tokens (Light Mode) ===== */
+:root {
+  /* Base */
+  --background: 0 0% 100%;          /* white */
+  --foreground: 222.2 84% 4.9%;     /* slate-950 */
+
+  /* Primary — ブランドカラー（ブルー系） */
+  --primary: 200 98% 39%;
+  --primary-foreground: 210 40% 98%;
+
+  /* Secondary / Muted */
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+
+  /* Borders & Form elements */
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --input-bg: 0 0% 100%;          /* form input background (light = white) */
+  --ring: 200 98% 39%;
+  --radius: 0.5rem;
+
+  /* Semantic: Feedback colors */
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --success: 142 76% 36%;
+  --success-foreground: 142 80% 95%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 38 90% 10%;
+  --info: 200 98% 39%;
+  --info-foreground: 200 95% 95%;
+}
+
+/* ===== Color Tokens (Dark Mode) ===== */
+.dark {
+  /* Base */
+  --background: 222.2 20% 12%;      /* softened dark */
+  --foreground: 210 40% 85%;        /* softened light */
+
+  /* Primary */
+  --primary: 200 98% 39%;
+  --primary-foreground: 210 40% 98%;
+
+  /* Secondary / Muted */
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+
+  /* Borders & Form elements */
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 25%;       /* slightly lighter border in dark */
+  --input-bg: 220 13% 22%;        /* form input background (dark = mid-gray) */
+  --ring: 200 98% 39%;
+
+  /* Semantic: Feedback colors */
+  --destructive: 0 62% 30%;
+  --destructive-foreground: 0 85% 95%;
+  --success: 142 70% 25%;
+  --success-foreground: 142 76% 90%;
+  --warning: 38 80% 40%;
+  --warning-foreground: 38 92% 95%;
+  --info: 200 80% 30%;
+  --info-foreground: 200 98% 90%;
+}
+
+/* ===== MDXEditor / prose リスト記号のフォントカラー修正 ===== */
+/*
+ * @tailwindcss/typography の prose は --tw-prose-bullets / --tw-prose-counters
+ * という独自変数でリスト記号色を管理するため、ダークモードでも黒のままになる。
+ * contentEditable エリア内の ::marker / li::before を直接 inherit させる。
+ */
+
+/* ダークモード: prose-invert が効かない contentEditable 内を上書き */
+.dark .prose ul > li::marker,
+.dark .prose ol > li::marker,
+.dark [class*="prose"] ul > li::marker,
+.dark [class*="prose"] ol > li::marker,
+.dark [contenteditable] ul > li::marker,
+.dark [contenteditable] ol > li::marker {
+  color: hsl(var(--foreground)) !important;
+}
+
+/* MDXEditorのcontentEditable内のすべてのテキスト要素 */
+.dark [contenteditable] ul,
+.dark [contenteditable] ol,
+.dark [contenteditable] li,
+.dark [contenteditable] p,
+.dark [contenteditable] h1,
+.dark [contenteditable] h2,
+.dark [contenteditable] h3,
+.dark [contenteditable] h4,
+.dark [contenteditable] h5,
+.dark [contenteditable] h6 {
+  color: hsl(var(--foreground));
+}
+
+/* prose の CSS 変数を上書き (dark-theme クラス経由) */
+.dark .prose,
+.dark-theme .prose,
+.dark [data-lexical-editor],
+.dark-theme [data-lexical-editor] {
+  --tw-prose-body: hsl(var(--foreground));
+  --tw-prose-headings: hsl(var(--foreground));
+  --tw-prose-bullets: hsl(var(--foreground));
+  --tw-prose-counters: hsl(var(--foreground));
+  --tw-prose-quotes: hsl(var(--foreground));
+  --tw-prose-code: hsl(var(--foreground));
+  --tw-prose-links: hsl(var(--primary));
+}
+
+/* ===== ページ画像エリアのスクロールバー ===== */
+/*
+ * scrollbar-page-image クラスに適用。
+ * Webkit 系（Chrome/Edge/Safari）は ::-webkit-scrollbar で細かく制御できる。
+ * Firefox は scrollbar-width / scrollbar-color で対応。
+ */
+
+/* Firefox */
+.scrollbar-page-image {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--primary) / 0.5) hsl(var(--border) / 0.3);
+}
+
+/* Chrome / Edge / Safari */
+.scrollbar-page-image::-webkit-scrollbar {
+  width: 8px;
+}
+
+/* トラック（スクロールバーの背景部分） */
+.scrollbar-page-image::-webkit-scrollbar-track {
+  background: hsl(var(--border) / 0.2);
+  border-radius: 999px;
+  margin: 4px 0;
+}
+
+/* サム（つまみ部分） */
+.scrollbar-page-image::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.4);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.2s;
+}
+
+/* サムホバー */
+.scrollbar-page-image::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.75);
+  background-clip: padding-box;
+}
+
+/* サムアクティブ（ドラッグ中） */
+.scrollbar-page-image::-webkit-scrollbar-thumb:active {
+  background: hsl(var(--primary));
+  background-clip: padding-box;
+}

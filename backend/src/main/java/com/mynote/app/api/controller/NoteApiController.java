@@ -13,11 +13,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.SessionAttribute;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.mynote.app.api.dto.ApiResponse;
-import com.mynote.app.api.dto.note.NoteByUserSeqNoResponceDto;
+import com.mynote.app.api.dto.note.NoteByUserSeqNoResponseDto;
 import com.mynote.app.api.dto.note.NoteDescriptionUpdateDto;
 import com.mynote.app.api.dto.note.NoteRequestDto;
 import com.mynote.app.api.dto.note.NoteResponseDto;
@@ -49,7 +49,7 @@ public class NoteApiController {
 
 	@PostMapping("/create")
 	public ResponseEntity<ApiResponse<String>> createNote(
-			@SessionAttribute("userId") Long userId,
+			@RequestAttribute("userId") Long userId,
 			@RequestBody NoteRequestDto noteRequestDto) {
 		log.info("[POST] createNote: userId={}", userId);
 
@@ -69,7 +69,7 @@ public class NoteApiController {
 	/** ユーザーに紐づいた全件取得 */
 	@GetMapping("")
 	public ResponseEntity<ApiResponse<List<NoteResponseDto>>> getAllNotes(
-			@SessionAttribute("userId") Long userId) {
+			@RequestAttribute("userId") Long userId) {
 		log.info("[GET] getAllNotes: userId={}", userId);
 		List<NoteResponseDto> notes = noteService.getAllNotes(userId);
 		log.info("Notes retrieved: count={}", notes.size());
@@ -79,7 +79,7 @@ public class NoteApiController {
 	/** ユーザーに紐づいた全目次を取得 (ノートIDでグループ化) */
 	@GetMapping("/toc")
 	public ResponseEntity<ApiResponse<Map<Long, List<TocResponseDto>>>> getAllNoteIndexMap(
-			@SessionAttribute("userId") Long userId) {
+			@RequestAttribute("userId") Long userId) {
 		log.info("[GET] getAllNoteIndexMap: userId={}", userId);
 		Map<Long, List<TocResponseDto>> tocMap = noteService.getAllNoteIndexMap(userId);
 		log.info("TOCs retrieved: count={}", tocMap.size());
@@ -89,7 +89,7 @@ public class NoteApiController {
 	/** ユーザーに紐づいた全ページを取得 (ノートIDでグループ化) */
 	@GetMapping("/pages")
 	public ResponseEntity<ApiResponse<Map<Long, List<PageResponseDto>>>> getAllNotePages(
-			@SessionAttribute("userId") Long userId) {
+			@RequestAttribute("userId") Long userId) {
 		log.info("[GET] getAllNotePages: userId={}", userId);
 		Map<Long, List<PageResponseDto>> pageMap = noteService.getAllNotePages(userId);
 		log.info("Pages retrieved: count={}", pageMap.size());
@@ -98,12 +98,12 @@ public class NoteApiController {
 
 	// --- GET (userSeqによる単ページ取得) ---
 	@GetMapping("/{userSeqNo}")
-	public ResponseEntity<ApiResponse<NoteByUserSeqNoResponceDto>> getNoteByUserSeqNo(
+	public ResponseEntity<ApiResponse<NoteByUserSeqNoResponseDto>> getNoteByUserSeqNo(
 			@PathVariable Integer userSeqNo,
-			@SessionAttribute("userId") Long userId) {
+			@RequestAttribute("userId") Long userId) {
 		log.info("[GET] getNoteByUserSeqNo: userId={}, userSeqNo={}", userId, userSeqNo);
 
-		NoteByUserSeqNoResponceDto note = noteService.getNoteByUserSeqNo(userId, userSeqNo);
+		NoteByUserSeqNoResponseDto note = noteService.getNoteByUserSeqNo(userId, userSeqNo);
 		if (note == null) {
 			log.warn("Note not found or forbidden: userId={}, userSeqNo={}", userId, userSeqNo);
 			return ResponseEntity.status(404).body(ApiResponse.failWithErrors("not_found_or_forbidden", null));
@@ -119,7 +119,7 @@ public class NoteApiController {
 	@PatchMapping("/{userSeqNo}/description")
 	public ResponseEntity<ApiResponse<Void>> updateDescription(@PathVariable Integer userSeqNo,
 			@RequestBody NoteDescriptionUpdateDto req,
-			@SessionAttribute("userId") Long userId,
+			@RequestAttribute("userId") Long userId,
 			RedirectAttributes rb) {
 		log.info("[PATCH] updateDescription: userId={}, userSeqNo={}", userId, userSeqNo);
 
@@ -140,7 +140,7 @@ public class NoteApiController {
 	public ResponseEntity<ApiResponse<Void>> renameNoteTitle(
 	        @PathVariable Integer userSeqNo,
 	        @RequestBody NoteTitleRenameRequestDto req,
-	        @SessionAttribute("userId") Long userId) {
+	        @RequestAttribute("userId") Long userId) {
 	    log.info("[PATCH] renameNoteTitle: userId={}, userSeqNo={}", userId, userSeqNo);
 
 	    // Service層で userId / userSeqNo から所有権チェック＆更新を実行
@@ -161,7 +161,7 @@ public class NoteApiController {
 	@PatchMapping("/toc/{tocId}/rename")
 	public ResponseEntity<ApiResponse<Void>> renameToc(@PathVariable Long tocId,
 			@RequestBody TocRenameRequestDto req,
-			@SessionAttribute("userId") Long userId) {
+			@RequestAttribute("userId") Long userId) {
 		log.info("[PATCH] renameToc: userId={}, tocId={}", userId, tocId);
 
 		// Service層でtocIdとuserIdを元に権限チェックと更新を実行
@@ -180,18 +180,18 @@ public class NoteApiController {
 	@PatchMapping("/toc/{tocId}/rebody")
 	public ResponseEntity<ApiResponse<Void>> rebodyToc(@PathVariable Long tocId,
 			@RequestBody TocExplanationEditRequestDto req,
-			@SessionAttribute("userId") Long userId) {
-		log.info("[PATCH] renameToc: userId={}, tocId={}", userId, tocId);
+			@RequestAttribute("userId") Long userId) {
+		log.info("[PATCH] rebodyToc: userId={}, tocId={}", userId, tocId);
 
 		// Service層でtocIdとuserIdを元に権限チェックと更新を実行
-		boolean updatedCount = noteIndexService.updateBody(tocId, req.getBody());
+		boolean updated = noteIndexService.updateBodyWithOwnerCheck(userId, tocId, req.getBody());
 
-		if (!updatedCount) {
+		if (!updated) {
 			log.warn("TOC not found or forbidden: userId={}, tocId={}", userId, tocId);
 			return ResponseEntity.status(404).body(ApiResponse.failWithErrors("not_found_or_forbidden", null));
 		}
 
-		log.info("TOC title renamed successfully: tocId={}", tocId);
+		log.info("TOC body updated successfully: tocId={}", tocId);
 		return ResponseEntity.ok(ApiResponse.ok(null, "UPDATED"));
 	}
 
@@ -199,13 +199,13 @@ public class NoteApiController {
 	@PatchMapping("/pages/{pageId}/text")
 	public ResponseEntity<ApiResponse<Void>> updatePageText(@PathVariable Long pageId,
 			@RequestBody PageExplanationEditRequestDto req,
-			@SessionAttribute("userId") Long userId) {
+			@RequestAttribute("userId") Long userId) {
 		log.info("[PATCH] updatePageText: userId={}, pageId={}", userId, pageId);
 
 		// Service層でpageIdとuserIdを元に権限チェックと更新を実行
-		boolean updatedCount = notePageService.updateExtractedText( pageId, req.getExtractedText());
+		boolean updated = notePageService.updateExtractedTextWithOwnerCheck(userId, pageId, req.getExtractedText());
 
-		if (!updatedCount) {
+		if (!updated) {
 			log.warn("Page not found or forbidden: userId={}, pageId={}", userId, pageId);
 			return ResponseEntity.status(404).body(ApiResponse.failWithErrors("not_found_or_forbidden", null));
 		}
@@ -219,7 +219,7 @@ public class NoteApiController {
 	@DeleteMapping("/{userSeqNo}")
 	public ResponseEntity<Void> deleteNote(
 			@PathVariable Integer userSeqNo,
-			@SessionAttribute("userId") Long userId) {
+			@RequestAttribute("userId") Long userId) {
 		log.info("[DELETE] deleteNote: userId={}, userSeqNo={}", userId, userSeqNo);
 
 		try {
@@ -255,9 +255,9 @@ public class NoteApiController {
 	}
 
 	// --- DELETE: ログインユーザーのノート資産を全削除 ---
-	@DeleteMapping("/userdelate")
+	@DeleteMapping("/user-delete")
 	public ResponseEntity<Void> deleteAllUserNotes(
-			@SessionAttribute("userId") Long userId) {
+			@RequestAttribute("userId") Long userId) {
 		log.info("[DELETE] deleteAllUserNotes: userId={}", userId);
 
 		try {

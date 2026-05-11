@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.SessionAttribute;
+import org.springframework.web.bind.annotation.RequestAttribute;
 
 import com.mynote.app.api.dto.ApiResponse;
 import com.mynote.app.api.dto.contact.ContactRequestDto;
@@ -29,7 +29,7 @@ public class ContactApiController {
 	 * */
 	@PostMapping()
 	public ResponseEntity<ApiResponse<Void>> createContact(
-			@SessionAttribute(name = "userId", required = false) Long userId,
+			@RequestAttribute(name = "userId", required = false) Long userId,
 		@RequestBody ContactRequestDto requestDto) {
 		contactService.createContact(userId, requestDto);
 		return ResponseEntity.ok(ApiResponse.ok(null));

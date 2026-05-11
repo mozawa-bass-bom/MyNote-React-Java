@@ -54,5 +54,18 @@ public interface NotePageMapper {
      */
     List<NotePage> findByNoteId(@Param("noteId") Long noteId);
     
+    /**
+     * 指定した複数のノートに紐づくすべてのページを取得する。（N+1対策用）
+     * @param noteIds ノートIDのリスト
+     * @return ページリスト
+     */
+    List<NotePage> findByNoteIds(@Param("noteIds") List<Long> noteIds);
+
     long findNoteIdById(@Param("id") Long pageId);
+
+    /**
+     * 複数ページの extractedText を一括更新する（AI結果反映に使用）。
+     * @param updates id -> extractedText のマップ
+     */
+    void updateExtractedTextBatch(@Param("updates") java.util.Map<Long, String> updates);
 }
