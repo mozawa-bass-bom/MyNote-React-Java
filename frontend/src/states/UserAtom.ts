@@ -4,9 +4,25 @@ import type { Role } from '../types/base';
 import { atomWithStorage } from 'jotai/utils';
 import type { LoginUser } from '../types/loginUser';
 
-export const loginUserAtom = atomWithStorage<LoginUser | null>('loginUser', null);
+function getInitialStorage<T>(key: string, fallback: T): T {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const item = localStorage.getItem(key);
+    return item ? (JSON.parse(item) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
-export const roleAtom = atom<Role>('USER');
+export const loginUserAtom = atomWithStorage<LoginUser | null>(
+  'loginUser',
+  getInitialStorage('loginUser', null)
+);
+
+export const roleAtom = atomWithStorage<Role>(
+  'role',
+  getInitialStorage('role', 'USER')
+);
 
 export const selectedCategoryIdAtom = atom<number | null>(null);
 export const selectedNoteIdAtom = atom<number | null>(null);
@@ -18,3 +34,4 @@ export const resetAllUserStateAtom = atom(null, (_get, set) => {
   set(selectedCategoryIdAtom, null);
   set(selectedNoteIdAtom, null);
 });
+

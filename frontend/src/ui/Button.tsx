@@ -1,6 +1,6 @@
 import React from 'react';
 
-type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
+type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline' | 'black';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -25,6 +25,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 focus:ring-secondary',
       danger: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 focus:ring-destructive',
       ghost: 'bg-transparent text-foreground hover:bg-muted focus:ring-muted',
+      outline: 'border border-input bg-background text-foreground hover:bg-muted focus:ring-ring',
+      black: 'bg-slate-900 text-white hover:bg-slate-800 focus:ring-slate-900',
     };
 
     const widthClass = fullWidth ? 'w-full' : '';

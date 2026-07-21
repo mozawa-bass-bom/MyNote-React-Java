@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   MDXEditor,
   headingsPlugin,
@@ -37,6 +37,63 @@ export default function Editor({ pageId, markdown, readOnly = false }: Props) {
   const lastSavedRef = useRef(markdown); // 直近サーバ反映済みの文字列
   const [saving, setSaving] = useState(false);
 
+  // pageId や markdown が変わったらエディタとRefを同期
+  useEffect(() => {
+    lastSavedRef.current = markdown;
+    if (editorRef.current) {
+      const currentMd = editorRef.current.getMarkdown();
+      if (currentMd !== markdown) {
+        editorRef.current.setMarkdown(markdown);
+      }
+    }
+  }, [pageId, markdown]);
+
+  const saveContent = useCallback(
+    async (mdToSave: string) => {
+      const trimmedToSave = mdToSave.trimEnd();
+      if (trimmedToSave === lastSavedRef.current.trimEnd()) return;
+
+      try {
+        setSaving(true);
+        await patchOk<ApiResponse<void>>(`notes/pages/${pageId}/text`, { extractedText: trimmedToSave });
+        lastSavedRef.current = trimmedToSave;
+        addToast({ type: 'success', message: '保存しました' });
+      } catch (e: unknown) {
+        if (axios.isCancel?.(e)) return;
+        const ax = axios.isAxiosError?.(e) ? (e as AxiosError<ApiResponse<void>>) : null;
+        const status = ax?.response?.status ?? 'no-status';
+        const msg = ax?.response?.data?.message ?? ax?.message ?? 'unknown error';
+        console.error('updatePageText failed:', status, msg, e);
+        addToast({ type: 'error', message: `保存に失敗しました（${status}）` });
+      } finally {
+        setSaving(false);
+      }
+    },
+    [pageId, addToast]
+  );
+
+  // onBlur 時の保存
+  const handleBlur = useCallback(() => {
+    const md = editorRef.current?.getMarkdown();
+    if (typeof md === 'string') {
+      saveContent(md);
+    }
+  }, [saveContent]);
+
+  // キーボードショートカット (Ctrl+S / Cmd+S) でも保存可能
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        const md = editorRef.current?.getMarkdown();
+        if (typeof md === 'string') {
+          saveContent(md);
+        }
+      }
+    },
+    [saveContent]
+  );
+
   const plugins = useMemo(
     () => [
       headingsPlugin(),
@@ -65,56 +122,30 @@ export default function Editor({ pageId, markdown, readOnly = false }: Props) {
     []
   );
 
-  async function handleBlur() {
-    const md = editorRef.current?.getMarkdown();
-    if (typeof md !== 'string') return;
-
-    const trimmed = md.trim();
-    const prev = lastSavedRef.current.trim();
-
-    if (trimmed === prev) return;
-    if (trimmed.length === 0) return;
-
-    try {
-      setSaving(true);
-      const mdToSave = md.trimEnd();
-      await patchOk<ApiResponse<void>>(`notes/pages/${pageId}/text`, { extractedText: mdToSave });
-      lastSavedRef.current = mdToSave;
-      addToast({ type: 'success', message: '保存しました' });
-    } catch (e: unknown) {
-      if (axios.isCancel?.(e)) return;
-      const ax = axios.isAxiosError?.(e) ? (e as AxiosError<ApiResponse<void>>) : null;
-      const status = ax?.response?.status ?? 'no-status';
-      const msg = ax?.response?.data?.message ?? ax?.message ?? 'unknown error';
-      console.error('updatePageText failed:', status, msg, e);
-      addToast({ type: 'error', message: `保存に失敗しました（${status}）` });
-    } finally {
-      setSaving(false);
-    }
-  }
-
   return (
-    <div className="h-full min-h-0">
+    <div className="h-full min-h-0" onKeyDown={handleKeyDown}>
       <MDXEditor
         ref={editorRef}
         markdown={markdown}
         readOnly={readOnly}
         onBlur={handleBlur}
         className={[
-          // ルート：将来ツールバー等を入れても安定するよう縦flex化
           'h-full flex flex-col',
-          // 中間ラッパー（.mdxeditor-root-contenteditable）を「親」として伸ばす
           '[&_.mdxeditor-root-contenteditable]:grid',
           '[&_.mdxeditor-root-contenteditable]:flex-1',
           '[&_.mdxeditor-root-contenteditable]:min-h-0',
         ].join(' ')}
         contentEditableClassName={[
-          // 編集領域：親の残り高さを占有しつつ、内容は中スクロール
-          'prose dark:prose-invert max-w-none p-2 rounded-md h-full min-h-0 overflow-auto',
+          'prose dark:prose-invert max-w-none p-3 rounded-md h-full min-h-0 overflow-auto',
           'border',
           saving ? 'border-ring ring-2 ring-ring/20' : 'border-border',
           'dark:text-foreground',
-          // リスト記号・番号をテーマカラーに追従させる
+          // 通常の段落(<p>)の余白と左インデントのリセット
+          'prose-p:my-1.5 prose-p:leading-relaxed [&_p]:ml-0 [&_p]:pl-0',
+          // リストの余白とパディングの最適化
+          'prose-ul:my-1.5 prose-ul:pl-6 prose-ol:my-1.5 prose-ol:pl-6 prose-li:my-0.5',
+          // リスト内部の<p>タグによる二重インデント・変な改行間隔を防止
+          '[&_li_p]:my-0 [&_li_p]:inline',
           'dark:[&_li::marker]:text-foreground dark:[&_li]:text-foreground',
           'dark:[&_ul]:text-foreground dark:[&_ol]:text-foreground',
         ].join(' ')}
@@ -123,3 +154,4 @@ export default function Editor({ pageId, markdown, readOnly = false }: Props) {
     </div>
   );
 }
+

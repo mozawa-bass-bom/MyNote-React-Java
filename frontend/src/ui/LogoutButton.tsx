@@ -1,11 +1,14 @@
-// components/ui/LogoutButton.tsx
 import { useNavigate } from 'react-router-dom';
 import { useSetAtom } from 'jotai';
 import { resetAllUserStateAtom } from '../states/UserAtom';
 import { getOk } from '../helpers/CustomAxios';
-// （任意）サーバにログアウト通知したい場合：import { postOk } from '../helpers/CustomAxios';
+import { LogOut } from 'lucide-react';
 
-export default function LogoutButton() {
+type Props = {
+  isCollapsed?: boolean;
+};
+
+export default function LogoutButton({ isCollapsed = false }: Props) {
   const navigate = useNavigate();
   const resetAll = useSetAtom(resetAllUserStateAtom);
 
@@ -19,10 +22,17 @@ export default function LogoutButton() {
   return (
     <button
       type="button"
-      className="w-full rounded-md bg-foreground px-3 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-60"
+      title={isCollapsed ? 'ログアウト' : undefined}
+      className={`rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-60 transition ${
+        isCollapsed
+          ? 'flex h-9 w-9 items-center justify-center p-0 mx-auto'
+          : 'w-full px-3 py-2 text-sm font-medium flex items-center justify-center gap-2'
+      }`}
       onClick={handleLogout}
     >
-      ログアウト
+      <LogOut className="h-4 w-4 shrink-0" />
+      {!isCollapsed && <span>ログアウト</span>}
     </button>
   );
 }
+
