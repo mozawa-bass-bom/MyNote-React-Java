@@ -49,8 +49,5 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Make mvnw executable
-        run: chmod +x mvnw
-
       - name: Compile backend
-        run: ./mvnw test-compile
+        run: mvn compile
