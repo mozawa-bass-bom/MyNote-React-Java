@@ -134,7 +134,7 @@ export default function UploadForm() {
         }
 
         await readSSE(res, async (evt) => {
-          if (!(evt as any).code) return; // connection event等を無視
+          if (!('code' in evt) || !evt.code) return; // connection event等を無視
 
           setSteps((prev) => {
             const next = [...prev];

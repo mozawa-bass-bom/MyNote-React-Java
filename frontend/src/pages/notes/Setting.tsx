@@ -1,5 +1,4 @@
 // src/pages/setting/Setting.tsx
-import { Link } from "react-router-dom";
 import DeleteAccountSection from "../../components/setting/DeleteAccountSection";
 import { useTheme } from "../../ui/ThemeProvider";
 

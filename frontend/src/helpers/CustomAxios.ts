@@ -116,14 +116,12 @@ type ApiErrorBody = { message?: string; code?: string };
 export function isCanceledError(e: unknown): boolean {
   // axios v1 系
   // どれかが当たればキャンセルと判定
-  return !!(
-    axios.isCancel?.(e) ||
-    (typeof e === 'object' &&
-      e !== null &&
-      ('code' in e || 'name' in e) &&
-      // @ts-expect-error: runtime narrow
-      (e.code === 'ERR_CANCELED' || e.name === 'CanceledError'))
-  );
+  if (axios.isCancel?.(e)) return true;
+  if (typeof e === 'object' && e !== null) {
+    const errObj = e as { code?: string; name?: string };
+    return errObj.code === 'ERR_CANCELED' || errObj.name === 'CanceledError';
+  }
+  return false;
 }
 
 export function toAxiosError(e: unknown): AxiosError<ApiErrorBody> | null {

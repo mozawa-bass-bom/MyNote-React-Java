@@ -52,7 +52,7 @@ export default function useUpdateNoteTitle() {
 
       // NoteDetail側もキャッシュにあれば一緒にタイトル更新するとより自然（今はNavをinvalidateする運用）
       const detailKey = ['noteDetail', userSeqNo];
-      const previousDetail = queryClient.getQueryData<any>(detailKey);
+      const previousDetail = queryClient.getQueryData<{ title?: string; [key: string]: unknown }>(detailKey);
       if (previousDetail && previousDetail.title !== title) {
          queryClient.setQueryData(detailKey, { ...previousDetail, title });
       }

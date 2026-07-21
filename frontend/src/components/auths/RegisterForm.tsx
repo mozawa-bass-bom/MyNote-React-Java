@@ -127,7 +127,7 @@ export default function RegisterForm() {
         "/auth/availability/username",
         {
           params: { value: v },
-        } as any,
+        },
       );
       if (latestUserName.current === v)
         setAvailability((p) => ({
@@ -150,7 +150,7 @@ export default function RegisterForm() {
     try {
       const res = await getOk<{ emailAvailable: boolean }>(
         "/auth/availability/email",
-        { params: { value: v } } as any,
+        { params: { value: v } },
       );
       if (latestEmail.current === v)
         setAvailability((p) => ({ ...p, emailAvailable: res.emailAvailable }));
